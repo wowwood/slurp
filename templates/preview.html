@@ -1,0 +1,32 @@
+{% extends "_base.html" %}
+{% block main %}
+<article>
+  <header>
+    <hgroup>
+      <h2><a href="{{ data['original_url'] }}">{{ data['title'] }}</a></h2>
+      <p>
+        by <a href="{{ data['uploader_url'] }}">{{ data['uploader'] }}</a>
+        · {{ timestamp }}
+        · {{ data['duration_string'] }}
+        · {{ data['format'] }}
+      </p>
+    </hgroup>
+  </header>
+
+  <img src="{{ data['thumbnail'] }}">
+</article>
+
+<form action="/download" method="POST">
+  {% macro render_field(field) %}
+    <input type="hidden" name="{{ field.name }}" value="{{ field.data }}">
+  {% endmacro %}
+
+  {{ render_field(form.url) }}
+  {{ render_field(form.slug) }}
+  {{ render_field(form.format) }}
+  {{ render_field(form.directory) }}
+
+  {{ form.hidden_tag() }}
+  <input type="submit" value="Download">
+</form>
+{% endblock %}

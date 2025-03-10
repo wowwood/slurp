@@ -1,0 +1,18 @@
+{% extends "_base.html" %}
+{% block head %}
+{% endblock %}
+{% block main %}
+<script type="text/javascript">
+    const resizeObserver = new ResizeObserver((_) => {
+        window.scrollTo(0, document.body.scrollHeight);
+    });
+    resizeObserver.observe(document.body);
+</script>
+
+<pre>{% for line in output %}
+{{ line }}{% endfor %}</pre>
+
+<form action="/" method="GET">
+    <input type="Submit" value="Done!">
+</form>
+{% endblock %}
