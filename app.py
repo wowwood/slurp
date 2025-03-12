@@ -14,7 +14,7 @@ app.config['OUTPUTS'] = app.config['OUTPUTS'].split(os.pathsep)
 
 class Format(Enum):
     VIDEO_AUDIO = "Video+Audio"
-    VIDEO_ONLY  = "Video Only"
+   # VIDEO_ONLY  = "Video Only" - not needed tbh
     AUDIO_ONLY  = "Audio Only"
 
     @property
@@ -22,7 +22,10 @@ class Format(Enum):
         match self:
             # pls add the other two
             case self.VIDEO_AUDIO:
-                return 'bv*[vcodec^=avc]+ba[ext=m4a]/b[ext=mp4]/b'
+                return 'bv*[vcodec^=avc]+ba[ext=m4a]/b[ext=mp4]/b' 
+                # force codec to h264 m4a/mp4
+            case self.AUDIO_ONLY:
+                return '-x'
             case _:
                 raise ValueError("invalid format")
 
