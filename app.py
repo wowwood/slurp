@@ -1,10 +1,8 @@
-from __future__ import print_function
-
 import os
 import subprocess
 import json
 import sys
-
+from __future__ import print_function
 from datetime import datetime
 from enum import Enum
 from flask import Flask, request, render_template, stream_template
