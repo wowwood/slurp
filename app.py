@@ -33,7 +33,7 @@ class DownloadForm(FlaskForm):
     url = URLField('url', validators=[DataRequired(), URL()])
     slug = StringField('slug', validators=[DataRequired()])
     print(slug)
-    slug = slug+".mp4"
+    slug = slug,".mp4"
     print(slug,"with file ext")
     format = SelectField('format', choices=[(v.name, v.value) for v in Format],
         validators=[DataRequired(), AnyOf([v.name for v in Format])])
