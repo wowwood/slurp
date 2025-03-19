@@ -28,5 +28,6 @@ $ poetry install --no-root
 > Do not expose the development server in production!
 
 ```bash
-$ poetry run flask run --debug
+$ poetry run flask run --debug --host=0.0.0.0
 ```
+_The host flag exposes it on the local interface, not just on the machine itself_
