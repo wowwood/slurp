@@ -2,13 +2,14 @@ import os
 import subprocess
 import json
 import sys
+from __future__ import print_function
 from datetime import datetime
 from enum import Enum
 from flask import Flask, request, render_template, stream_template
 from flask_wtf import FlaskForm
 from wtforms import URLField, StringField, SelectField
 from wtforms.validators import URL, DataRequired, AnyOf
-from __future__ import print_function
+
 
 app = Flask(__name__)
 app.config.from_prefixed_env(prefix='YDP')
