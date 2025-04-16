@@ -39,7 +39,7 @@ class DownloadForm(FlaskForm):
     directory = SelectField('directory', validators=[DataRequired()])
 
     def args(self):
-        return Format[self.format.data].args + [self.url.data]
+        return Format[self.format.data].args + ['-o', self.slug.data + '.%(ext)s', self.url.data]
 
 @app.get('/')
 def index():
