@@ -18,14 +18,16 @@ class Format(Enum):
     AUDIO_ONLY  = "Audio Only"
 
     @property
-    def ytdlp(self):
+    def args(self):
         match self:
             # pls add the other two
             case self.VIDEO_AUDIO:
-                return 'bv*[vcodec^=avc]+ba[ext=m4a]/b[ext=mp4]/b' 
                 # force codec to h264 m4a/mp4
+                # fails if this format isn't available, fix later
+                # return ['-f', 'bv*[vcodec^=avc]+ba[ext=m4a]/b[ext=mp4]/b']
+                return []
             case self.AUDIO_ONLY:
-                return '-x'
+                return ['-x']
             case _:
                 raise ValueError("invalid format")
 
@@ -37,7 +39,7 @@ class DownloadForm(FlaskForm):
     directory = SelectField('directory', validators=[DataRequired()])
 
     def args(self):
-        return ['-f', Format[self.format.data].ytdlp, self.url.data]
+        return Format[self.format.data].args + [self.url.data]
 
 @app.get('/')
 def index():
