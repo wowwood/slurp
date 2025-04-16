@@ -3,7 +3,7 @@ Description=Web UI for yt-dlp
 After=network.target
 
 [Service]
-ExecStart=poetry run flask run
+ExecStart=poetry run flask run -h 0.0.0.0
 WorkingDirectory=/opt/slurp
 
 # Run as a temporary, unprivileged user. Implies a wide range of restrictions.
