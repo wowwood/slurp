@@ -22,8 +22,9 @@ class Format(Enum):
         match self:
             # pls add the other two
             case self.VIDEO_AUDIO:
-                return 'bv*[vcodec^=avc]+ba[ext=m4a]/b[ext=mp4]/b' 
+                return '-f bestvideo*+bestaudio/best' 
                 # force codec to h264 m4a/mp4
+                # return 'bv*[vcodec^=avc]+ba[ext=m4a]/b[ext=mp4]/b'
             case self.AUDIO_ONLY:
                 return '-x'
             case _:
