@@ -3,41 +3,45 @@ Description=Web UI for yt-dlp
 After=network.target
 
 [Service]
-ExecStart=poetry run flask run -h 0.0.0.0
+ExecStart=/home/ytdl/.cache/pypoetry/virtualenvs/ytdlpls-yxJEgdQz-py3.13/bin/serve
 WorkingDirectory=/opt/slurp
+# Environment="PATH=/home/ytdl/.cache/pypoetry/virtualenvs/ytdlpls-yxJEgdQz-py3.13/bin"
+
+User = ytdl
+Group = ytdl
 
 # Run as a temporary, unprivileged user. Implies a wide range of restrictions.
-DynamicUser=true
+# DynamicUser=true
 
 # Bind the only paths we're allowed to access normally.
-BindPaths=/srv/ytdl-share
+# BindPaths=/srv/ytdl-share
 
 # Society if systemd had a switch that let me opt into things instead of having
 # to manually disable every feature in Linux one-by-one.
 # At least systemd-analyze security is friend-shaped.
-PrivateUsers=true
-PrivateDevices=true
-PrivateTmp=true
-ProtectHome=true
-ProtectClock=true
-ProtectHostname=true
-ProtectKernelTunables=true
-ProtectKernelModules=true
-ProtectKernelLogs=true
-ProtectControlGroups=true
-ProtectProc=ptraceable
-ProcSubset=pid
-RestrictNamespaces=true
-RestrictRealtime=true
+#PrivateUsers=true
+#PrivateDevices=true
+#PrivateTmp=true
+#ProtectHome=true
+#ProtectClock=true
+#ProtectHostname=true
+#ProtectKernelTunables=true
+#ProtectKernelModules=true
+#ProtectKernelLogs=true
+#ProtectControlGroups=true
+#ProtectProc=ptraceable
+#ProcSubset=pid
+#RestrictNamespaces=true
+#RestrictRealtime=true
 
 # Disable some truly bonkers stuff.
-LockPersonality=true
-MemoryDenyWriteExecute=true
-CapabilityBoundingSet=
-SystemCallArchitectures=native
-SystemCallFilter=@system-service
-SystemCallFilter=~@privileged @resources
-RestrictAddressFamilies=AF_INET AF_INET6
+#LockPersonality=true
+#MemoryDenyWriteExecute=true
+#CapabilityBoundingSet=
+#SystemCallArchitectures=native
+#SystemCallFilter=@system-service
+#SystemCallFilter=~@privileged @resources
+#RestrictAddressFamilies=AF_INET AF_INET6
 
 [Install]
 WantedBy=multi-user.target

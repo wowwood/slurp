@@ -5,12 +5,14 @@ from datetime import datetime
 from enum import Enum
 from flask import Flask, request, render_template, stream_template
 from flask_wtf import FlaskForm
+import tomllib
 from wtforms import URLField, StringField, SelectField
 from wtforms.validators import URL, DataRequired, AnyOf
 
 app = Flask(__name__)
-app.config.from_prefixed_env(prefix='YDP')
-app.config['OUTPUTS'] = app.config['OUTPUTS'].split(os.pathsep)
+# app.config.from_prefixed_env(prefix='YDP')
+app.config.from_file(os.path.join(os.getcwd(), "config.toml"), load=tomllib.load, text=False)
+app.config['OUTPUTS'] = app.config.get('OUTPUTS', '').split(os.pathsep)
 
 class Format(Enum):
     VIDEO_AUDIO = "Video+Audio"
@@ -69,3 +71,6 @@ def download():
             for line in ytdlp.stdout:
                 yield line
     return stream_template('download.html', output=output())
+
+def serve():
+    app.run(host='0.0.0.0', port=8000, debug=False)

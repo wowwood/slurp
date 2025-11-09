@@ -1,0 +1,2 @@
+SECRET_KEY = "5Fh/gM4PA1NuQlWKXCKtlkeb6iDj01TYz1OtlSJ7I5Y="
+OUTPUTS = "/srv/ytdl-share/_vantage"
