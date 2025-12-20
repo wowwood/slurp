@@ -7,6 +7,8 @@ from enum import Enum
 from flask import Flask, request, render_template, stream_template
 from flask_wtf import FlaskForm
 import tomllib
+
+from markupsafe import escape
 from wtforms import URLField, StringField, SelectField
 from wtforms.validators import URL, DataRequired, AnyOf
 
@@ -138,7 +140,7 @@ def download():
                     line_fmt = "color: orange"
                 case "error":
                     line_fmt = "color: red"
-            yield f"<span style='{line_fmt}'>{typ}</span>: {payload}"
+            yield f"<span style='{line_fmt}'>{typ}</span>: {escape(payload)}"
         yield "☑️ Download complete\n"
 
     return stream_template('download.html', output=output())
