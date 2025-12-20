@@ -1,6 +1,6 @@
 [project]
 name = "ytdlpls"
-version = "0.1.0"
+version = "0.2.0"
 description = "Web UI for yt-dlp"
 authors = [
     {name = "embr",email = "git@liclac.eu"}
@@ -13,6 +13,7 @@ dependencies = [
     "watchdog (>=6.0.0,<7.0.0)",
     "python-dotenv (>=1.0.1,<2.0.0)",
     "flask-wtf (>=1.2.2,<2.0.0)",
+    "yt-dlp (>=2025.12.8,<2026.0.0)",
 ]
 
 
