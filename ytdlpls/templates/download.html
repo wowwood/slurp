@@ -10,7 +10,7 @@
 </script>
 
 <pre>{% for line in output %}
-{{ line }}{% endfor %}</pre>
+{{ line | safe }}{% endfor %}</pre>
 
 <form action="/" method="GET" class="bottom-form">
     <input type="Submit" value="Done!">
