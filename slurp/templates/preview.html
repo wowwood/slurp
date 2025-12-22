@@ -3,17 +3,19 @@
 <article>
   <header>
     <hgroup>
-      <h2><a href="{{ data['original_url'] }}">{{ data['title'] }}</a></h2>
+      <h2><a href="{{ metadata.url }}">{{ metadata.name }}</a></h2>
       <p>
-        by <a href="{{ data['uploader_url'] }}">{{ data['uploader'] }}</a>
-        · {{ timestamp }}
-        · {{ data['duration_string'] }}
-        · {{ data['format'] }}
+        by <a href="{{ metadata.author_url }}">{{ metadata.author }}</a>
+        · {{ metadata.ts_upload.strftime('%d/%m/%Y') }}
+        · {{ metadata.duration|duration }}
+        · {{ metadata.format }}
       </p>
     </hgroup>
   </header>
 
-  <img src="{{ data['thumbnail'] }}">
+  {% if metadata.thumbnail_url %}
+    <img src="{{ metadata.thumbnail_url }}">
+  {% endif %}
 </article>
 
 <form action="/download" method="POST">
