@@ -7,8 +7,8 @@ import tomllib
 from wtforms import URLField, StringField, SelectField
 from wtforms.validators import URL, DataRequired, AnyOf
 
-from slurp.fetchers.mediametadata import Format
-from slurp.fetchers.ytdlp import get_metadata, get_media
+from slurp.fetchers.types import Format
+from slurp.fetchers import determine_fetcher
 from slurp.helpers import format_duration
 
 app = Flask(__name__)
@@ -32,8 +32,12 @@ def index():
     form.directory.choices = app.config['OUTPUTS']
     if request.args:
         if form.validate():
-            data = get_metadata(form.url.data)
-            return render_template('preview.html', form=form, metadata=data)
+            try:
+                fetcher = determine_fetcher(form.url.data)
+            except ValueError as e:
+                return str(e), 400
+            data = fetcher.get_metadata(form.url.data)
+            return render_template('preview.html', form=form, metadata=data, fetcher=fetcher.name)
 
         for field in form:
             if field.errors:
