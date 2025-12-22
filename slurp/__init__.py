@@ -14,10 +14,15 @@ from wtforms.validators import URL, DataRequired, AnyOf
 
 from yt_dlp import YoutubeDL
 
+from slurp.fetchers.ytdlp import GetMetadata
+from slurp.helpers import format_duration
+
 app = Flask(__name__)
 # app.config.from_prefixed_env(prefix='YDP')
 app.config.from_file(os.path.join(os.getcwd(), "config.toml"), load=tomllib.load, text=False)
 app.config['OUTPUTS'] = app.config.get('OUTPUTS', '').split(os.pathsep)
+
+app.jinja_env.filters['duration'] = format_duration
 
 class Format(Enum):
     VIDEO_AUDIO = "Video+Audio"
@@ -59,12 +64,8 @@ def index():
     if request.args:
         if form.validate():
             with YoutubeDL() as ydl:
-                info = ydl.extract_info(form.url.data, download=False)
-
-                # sanitize_info required to make serializable
-                data = ydl.sanitize_info(info)
-                return render_template('preview.html', form=form, data=data,
-                    timestamp=datetime.fromtimestamp(data.get('timestamp', None)))
+                data = GetMetadata(form.url.data)
+                return render_template('preview.html', form=form, metadata=data)
         for field in form:
             if field.errors:
                 field.render_kw = dict(aria_invalid = 'true', aria_describedby = f'{field.id}-errors')
