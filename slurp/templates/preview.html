@@ -29,6 +29,6 @@
   {{ render_field(form.directory) }}
 
   {{ form.hidden_tag() }}
-  <input type="submit" value="Download">
+  <input type="submit" value="Fetch with {{ fetcher }}">
 </form>
 {% endblock %}
