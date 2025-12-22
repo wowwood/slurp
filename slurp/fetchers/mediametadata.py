@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 
 
 @dataclass()
@@ -17,3 +18,9 @@ class MediaMetadata:
     format: str = 'Unknown Format'
 
     thumbnail_url: str | None = None
+
+
+class Format(Enum):
+    VIDEO_AUDIO = "Video+Audio"
+   # VIDEO_ONLY  = "Video Only" - not needed tbh
+    AUDIO_ONLY  = "Audio Only"
