@@ -1,4 +1,8 @@
-def format_duration(seconds):
+def format_duration(seconds: int) -> str:
+    """ format_duration nicely formats the given duration in seconds.
+    :param seconds: the duration in seconds
+    :return str: The duration formatted nicely, in hours, minutes, and seconds.
+    """
     seconds = int(seconds)
 
     minutes, seconds = divmod(seconds, 60)

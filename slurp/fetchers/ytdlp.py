@@ -11,6 +11,7 @@ from slurp.fetchers.types import Fetcher, MediaMetadata
 
 
 class YTDLPFetcher(Fetcher):
+    """ YTDLPFetcher is a fetcher that uses the YT-DLP library to download media exclusively from YouTube."""
     name = "yt-dlp"
 
     class _queueLogger:
@@ -36,7 +37,11 @@ class YTDLPFetcher(Fetcher):
             self.q.put(("error", msg))
 
     @classmethod
-    def _format_config(cls, fmt: Format):
+    def _format_config(cls, fmt: Format) -> dict:
+        """ _format_config returns YT-DLP configuration to be used when downloading media in the given format.
+        :param fmt: The desired media format.
+        :return: A YT-DLP configuration parameters dictionary.
+        """
         match fmt:
             case fmt.VIDEO_AUDIO:
                 return {
@@ -57,6 +62,7 @@ class YTDLPFetcher(Fetcher):
                 raise ValueError("invalid format")
 
     def get_metadata(self, url: str, format: Format = Format.VIDEO_AUDIO) -> MediaMetadata:
+        """ get_metadata returns MediaMetadata for the given url. """
         data = MediaMetadata(url)
         with YoutubeDL(self._format_config(format)) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -99,6 +105,7 @@ class YTDLPFetcher(Fetcher):
             q.put(None)
 
     def get_media(self, url: str, format: Format, directory: str, filename: str) -> Generator[str]:
+        """ get_media downloads the media at the given params in the foreground, returning log information by means of a Generator. """
         q = queue.Queue()
 
         # We need to run the download on a thread so we can continue to execute our client response
