@@ -12,7 +12,7 @@ def determine_fetcher(url: str):
 
     # Everything else goes to Cobalt.
     # Done in a kinda yucky way - sue me.
-    return CobaltFetcher(current_app.config.get("COBALT_URL"))
+    return CobaltFetcher(current_app.config.get("FETCHER_COBALT_URL"), current_app.config.get("FETCHER_COBALT_KEY"))
 
 
 # Filled by configuration routine.

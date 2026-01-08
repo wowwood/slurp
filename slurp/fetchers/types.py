@@ -27,21 +27,21 @@ class Fetcher:
 
     service_urls: list[str] | None
 
-    def get_metadata(self, url: str, format: Format) -> MediaMetadata | None:
+    def get_metadata(self, url: str, fmt: Format) -> MediaMetadata | None:
         """
         get_metadata fetches ONLY metadata about the media at the given URL.
         This is used to provide early metadata information.
         :param url: Target URL
-        :param format: The desired media scrape format.
+        :param fmt: The desired media scrape format.
         :return: A MediaMetadata object, or None if it is not possible to retrieve early media metadata.
         """
         pass
 
-    def get_media(self, url: str, format: Format, directory: str, filename: str) -> Generator[str]:
+    def get_media(self, url: str, fmt: Format, directory: str, filename: str) -> Generator[str]:
         """
         get_media fetches the media at the given URL, in the given format, and places it at the provided directory / filename.
         :param url:
-        :param format:
+        :param fmt:
         :param directory:
         :param filename:
         """

@@ -23,7 +23,7 @@ if app.config.get('FETCHER_YTDLP_ENABLED') is True:
 
 if app.config.get('FETCHER_COBALT_ENABLED') is True:
     app.logger.info('Cobalt fetcher enabled')
-    fetchers.append(CobaltFetcher(app.config.get('COBALT_URL', 'http://localhost:9000')))
+    fetchers.append(CobaltFetcher(app.config.get('FETCHER_COBALT_URL', 'http://localhost:9000'), app.config.get('FETCHER_COBALT_KEY', None)))
 
 if len(fetchers) == 0:
     # No fetchers configured - fatal error.

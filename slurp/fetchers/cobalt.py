@@ -1,4 +1,3 @@
-import json
 import os
 import queue
 import shutil
@@ -15,9 +14,11 @@ class CobaltFetcher(Fetcher):
     name = "cobalt"
 
     url = ""
+    key: str | None = None
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, key: str=None):
         self.url = url
+        self.key = key if key is not '' else None
 
     @property
     def service_names(self) -> list[str]:
@@ -35,16 +36,20 @@ class CobaltFetcher(Fetcher):
         # Special return: we support anything that the backend supports.
         return None
 
-    @classmethod
-    def _headers(cls):
+    def _headers(self) -> dict[str, str]:
         """ _headers builds a set of JSON acceptance headers for an API request to a Cobalt instance. """
-        return {
+        cfg = {
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "User-Agent": "wowwood/slurp"
+            "User-Agent": "wowwood/slurp",
         }
+        if self.key is not None:
+            cfg["Authorization"] = f"Api-Key {self.key}"
+
+        return cfg
+
     @classmethod
-    def _req_data(cls, url: str, format: Format) -> dict:
+    def _req_data(cls, url: str, fmt: Format) -> dict:
         """ _req_data builds the request parameters for a media download request to a Cobalt instance.
         """
         cfg = {
@@ -52,27 +57,27 @@ class CobaltFetcher(Fetcher):
             "filenameStyle": "basic",
         }
 
-        match format:
-            case format.VIDEO_AUDIO:
+        match fmt:
+            case fmt.VIDEO_AUDIO:
                 cfg["downloadMode"] = "auto"
                 cfg["videoQuality"] = "max"
                 cfg["audioBitrate"] = "320"
                 cfg["audioFormat"] = "best"
-            case format.AUDIO_ONLY:
+            case fmt.AUDIO_ONLY:
                 cfg["downloadMode"] = "audio"
                 cfg["audioBitrate"] = "320"
                 cfg["audioFormat"] = "best"
-            case format.VIDEO_ONLY:
+            case fmt.VIDEO_ONLY:
                 cfg["downloadMode"] = "mute"
                 cfg["videoQuality"] = "max"
 
         return cfg
 
-    def get_metadata(self, url: str, format: Format = Format.VIDEO_AUDIO) -> MediaMetadata | None:
+    def get_metadata(self, url: str, fmt: Format = Format.VIDEO_AUDIO) -> MediaMetadata | None:
         """ Cobalt can't presently return metadata without just downloading the file. """
         return None
 
-    def _get_media(self, q: queue.Queue, url: str, format: Format, directory: str, filename: str):
+    def _get_media(self, q: queue.Queue, url: str, fmt: Format, directory: str, filename: str):
         """
         Commence a download.
         """
@@ -81,7 +86,7 @@ class CobaltFetcher(Fetcher):
         response_data: dict = {}
 
         try:
-            response = httpx.post("http://localhost:9000/", headers=self._headers(), json=self._req_data(url, format))
+            response = httpx.post("http://localhost:9000/", headers=self._headers(), json=self._req_data(url, fmt))
             response_data = response.json()
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
@@ -163,12 +168,12 @@ class CobaltFetcher(Fetcher):
         q.put(("finish", 0))
         q.put(None)
 
-    def get_media(self, url: str, format: Format, directory: str, filename: str) -> Generator[str]:
+    def get_media(self, url: str, fmt: Format, directory: str, filename: str) -> Generator[str]:
         """ get_media downloads the media at the given params in the foreground, returning log information by means of a Generator. """
         q = queue.Queue()
 
         # Start background thread to run the pybalt download
-        t = threading.Thread(target=self._get_media(q, url, format, directory, filename), daemon=True)
+        t = threading.Thread(target=self._get_media(q, url, fmt, directory, filename), daemon=True)
         t.start()
 
         # We need to run the download on a thread so we can continue to execute our client response
