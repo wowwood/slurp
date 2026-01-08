@@ -6,8 +6,7 @@ from typing import Generator
 from markupsafe import escape
 from yt_dlp import YoutubeDL
 
-from slurp.fetchers import Format
-from slurp.fetchers.types import Fetcher, MediaMetadata
+from slurp.fetchers.types import Format, Fetcher, MediaMetadata
 
 
 class YTDLPFetcher(Fetcher):

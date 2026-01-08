@@ -7,7 +7,7 @@ from typing import Generator
 class Format(Enum):
     """ A Format defines what format the targetted Media should be fetched in. """
     VIDEO_AUDIO = "Video+Audio"
-   # VIDEO_ONLY  = "Video Only" - not needed tbh
+    VIDEO_ONLY  = "Video Only (muted)"
     AUDIO_ONLY  = "Audio Only"
 
 
