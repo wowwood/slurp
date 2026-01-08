@@ -36,3 +36,5 @@ _The host flag exposes it on the local interface, not just on the machine itself
 ### Configuration
 
 Simply supply an overridden `config.toml` file.
+
+Note: you must have at least one fetcher enabled..

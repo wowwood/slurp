@@ -16,7 +16,7 @@ class YTDLPFetcher(Fetcher):
     service_names = ['Youtube']
     service_urls = ['youtube.com', 'youtu.be']
 
-    class _queueLogger:
+    class _Queuelogger:
         """ queueLogger provides a yt-dlp compatible logging interface that emits exclusively to a queue."""
 
         def __init__(self, q: queue.Queue):
@@ -63,10 +63,10 @@ class YTDLPFetcher(Fetcher):
             case _:
                 raise ValueError("invalid format")
 
-    def get_metadata(self, url: str, format: Format = Format.VIDEO_AUDIO) -> MediaMetadata:
+    def get_metadata(self, url: str, fmt: Format = Format.VIDEO_AUDIO) -> MediaMetadata:
         """ get_metadata returns MediaMetadata for the given url. """
         data = MediaMetadata(url)
-        with YoutubeDL(self._format_config(format)) as ydl:
+        with YoutubeDL(self._format_config(fmt)) as ydl:
             info = ydl.extract_info(url, download=False)
 
             # sanitize_info required to make serializable
@@ -82,13 +82,13 @@ class YTDLPFetcher(Fetcher):
             data.format = response.get('format')
         return data
 
-    def _get_media(self, q: queue.Queue, url: str, format: Format, directory: str, filename: str):
+    def _get_media(self, q: queue.Queue, url: str, fmt: Format, directory: str, filename: str):
         """
-        Commence a download from Youtube.
+        Commence a download from YouTube.
         Consider threading this to allow for asynchronous downloads.
         """
         opts = {
-            'logger': self._queueLogger(q),
+            'logger': self._Queuelogger(q),
             'no_warnings': True,
             'paths': {
                 'home': directory,
@@ -96,7 +96,7 @@ class YTDLPFetcher(Fetcher):
             },
             # Note: This will break if you were to pass in multiple target URLs
             'outtmpl': f'{filename}.%(ext)s',
-        } | self._format_config(format)
+        } | self._format_config(fmt)
         try:
             with YoutubeDL(opts) as ydl:
                 ydl.download([url])
@@ -107,12 +107,12 @@ class YTDLPFetcher(Fetcher):
             # signals end of stream
             q.put(None)
 
-    def get_media(self, url: str, format: Format, directory: str, filename: str) -> Generator[str]:
+    def get_media(self, url: str, fmt: Format, directory: str, filename: str) -> Generator[str]:
         """ get_media downloads the media at the given params in the foreground, returning log information by means of a Generator. """
         q = queue.Queue()
 
         # We need to run the download on a thread so we can continue to execute our client response
-        thread = threading.Thread(target=self._get_media(q, url, format, directory, filename), daemon=True)
+        thread = threading.Thread(target=self._get_media(q, url, fmt, directory, filename), daemon=True)
         thread.start()
 
         while True:
