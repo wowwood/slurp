@@ -30,18 +30,7 @@ class DownloadForm(FlaskForm):
 def index():
     form = DownloadForm(request.args)
     form.directory.choices = app.config['OUTPUTS']
-    if request.args:
-        if form.validate():
-            try:
-                fetcher = determine_fetcher(form.url.data)
-            except ValueError as e:
-                return str(e), 400
-            data = fetcher.get_metadata(form.url.data)
-            return render_template('preview.html', form=form, metadata=data, fetcher=fetcher.name)
 
-        for field in form:
-            if field.errors:
-                field.render_kw = dict(aria_invalid = 'true', aria_describedby = f'{field.id}-errors')
     return render_template('index.html', form=form)
 
 @app.post('/download')
@@ -51,7 +40,17 @@ def download():
     if not form.validate_on_submit():
         return form.errors
 
-    return stream_template('download.html', output=get_media(form.url.data, Format[form.format.data], form.directory.data, form.slug.data))
+    try:
+        fetcher = determine_fetcher(form.url.data)
+    except ValueError as e:
+        return str(e), 400
+
+    return stream_template(
+        'download.html',
+        fetcher=fetcher,
+        metadata=fetcher.get_metadata(form.url.data, Format[form.format.data]),
+        output=fetcher.get_media(form.url.data, Format[form.format.data], form.directory.data, form.slug.data)
+    )
 
 def serve():
     app.run(host='0.0.0.0', port=8000, debug=False)

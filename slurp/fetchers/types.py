@@ -20,11 +20,13 @@ class Fetcher:
 
     name: str
 
-    def get_metadata(self, url: str, format: Format) -> MediaMetadata:
+    def get_metadata(self, url: str, format: Format) -> MediaMetadata | None:
         """
         get_metadata fetches ONLY metadata about the media at the given URL.
+        This is used to provide early metadata information.
         :param url: Target URL
         :param format: The desired media scrape format.
+        :return: A MediaMetadata object, or None if it is not possible to retrieve early media metadata.
         """
         pass
 

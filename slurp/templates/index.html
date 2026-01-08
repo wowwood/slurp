@@ -1,8 +1,9 @@
 {% extends "_base.html" %}
 {% block main %}
-<h1>YouTube Download and Ingest</h1>
+<h1>🥤 Slurp</h1>
+<h4>A Web Media Download and Ingest utility</h4>
 
-<form>
+<form action="/download" method="POST">
   {% macro render_field(field) %}
     {{ field(**kwargs) }}
     {% if field.errors %}
@@ -20,6 +21,6 @@
   {{ render_field(form.directory, aria_label="Select an output directory") }}
 
   {{ form.hidden_tag() }}
-  <input type="submit" value="Preview">
+  <input type="submit" value="🥤 Slurp Media">
 </form>
 {% endblock %}

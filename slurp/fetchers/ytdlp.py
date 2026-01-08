@@ -86,7 +86,7 @@ class YTDLPFetcher(Fetcher):
         Consider threading this to allow for asynchronous downloads.
         """
         opts = {
-            'logger': self.queueLogger(q),
+            'logger': self._queueLogger(q),
             'no_warnings': True,
             'paths': {
                 'home': directory,
@@ -100,6 +100,7 @@ class YTDLPFetcher(Fetcher):
                 ydl.download([url])
         except Exception as e:
             q.put(("error", f"download exception: {e}"))
+            q.put(("finish", 1))
         finally:
             # signals end of stream
             q.put(None)
@@ -125,5 +126,10 @@ class YTDLPFetcher(Fetcher):
                     line_fmt = "color: orange"
                 case "error":
                     line_fmt = "color: red"
+                case "finish":
+                    if payload != 0:
+                        yield f"<span style='color:red'>❌ Slurp failed!</span> Please check the logs above."
+                    else:
+                        yield f"<span style='color:green'>🥤Slurp successful</span>"
+                    continue
             yield f"<span style='{line_fmt}'>{typ}</span>: {escape(payload)}"
-        yield "☑️ Download complete\n"
