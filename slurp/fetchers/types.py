@@ -16,9 +16,16 @@ class Fetcher:
 
     Attributes:
         name: Friendly name of the Fetcher
+        service_names: list[str]: Friendly names of services this fetcher supports.
+        service_urls: list[str] | None: List of domains that this fetcher supports grabbing media from.
+            If set to None, then this service will attempt to download literally anything as a last resort.
     """
 
     name: str
+
+    service_names: list[str]
+
+    service_urls: list[str] | None
 
     def get_metadata(self, url: str, format: Format) -> MediaMetadata | None:
         """

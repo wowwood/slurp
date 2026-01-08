@@ -13,6 +13,9 @@ class YTDLPFetcher(Fetcher):
     """ YTDLPFetcher is a fetcher that uses the YT-DLP library to download media exclusively from YouTube."""
     name = "yt-dlp"
 
+    service_names = ['Youtube']
+    service_urls = ['youtube.com', 'youtu.be']
+
     class _queueLogger:
         """ queueLogger provides a yt-dlp compatible logging interface that emits exclusively to a queue."""
 

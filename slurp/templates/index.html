@@ -23,4 +23,19 @@
   {{ form.hidden_tag() }}
   <input type="submit" value="🥤 Slurp Media">
 </form>
+<article>
+    <h6>The following fetchers are supported:</h6>
+    <ul>
+    {% for f in fetchers %}
+            <li>
+                <b>{{ f.name }}</b>:
+                <ul>
+                    {% for n in f.service_names %}
+                        <li>{{ n }}</li>
+                    {% endfor %}
+                </ul>
+            </li>
+    {% endfor %}
+    </ul>
+</article>
 {% endblock %}

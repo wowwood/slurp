@@ -1,2 +1,7 @@
 SECRET_KEY = "5Fh/gM4PA1NuQlWKXCKtlkeb6iDj01TYz1OtlSJ7I5Y="
 OUTPUTS = "/mnt/editorswaps-syn/ytdl"
+
+FETCHER_YTDLP_ENABLED = true
+
+FETCHER_COBALT_ENABLED = true
+FETCHER_COBALT_URL = "http://localhost:9000/"

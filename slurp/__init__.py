@@ -8,13 +8,26 @@ from wtforms import URLField, StringField, SelectField
 from wtforms.validators import URL, DataRequired, AnyOf
 
 from slurp.fetchers.types import Format
-from slurp.fetchers import determine_fetcher
+from slurp.fetchers import determine_fetcher, fetchers, YTDLPFetcher, CobaltFetcher
 from slurp.helpers import format_duration
 
 app = Flask(__name__)
 # app.config.from_prefixed_env(prefix='YDP')
 app.config.from_file(os.path.join(os.getcwd(), "config.toml"), load=tomllib.load, text=False)
 app.config['OUTPUTS'] = app.config.get('OUTPUTS', '').split(os.pathsep)
+
+# Fill fetchers config with configured fetchers.
+if app.config.get('FETCHER_YTDLP_ENABLED') is True:
+    app.logger.info('YTDLP fetcher enabled')
+    fetchers.append(YTDLPFetcher())
+
+if app.config.get('FETCHER_COBALT_ENABLED') is True:
+    app.logger.info('Cobalt fetcher enabled')
+    fetchers.append(CobaltFetcher(app.config.get('COBALT_URL', 'http://localhost:9000')))
+
+if len(fetchers) == 0:
+    # No fetchers configured - fatal error.
+    raise Exception('No fetchers enabled')
 
 app.jinja_env.filters['duration'] = format_duration
 
@@ -31,7 +44,7 @@ def index():
     form = DownloadForm(request.args)
     form.directory.choices = app.config['OUTPUTS']
 
-    return render_template('index.html', form=form)
+    return render_template('index.html', form=form, fetchers=fetchers)
 
 @app.post('/download')
 def download():
