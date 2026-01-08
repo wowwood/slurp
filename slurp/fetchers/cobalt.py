@@ -14,6 +14,27 @@ class CobaltFetcher(Fetcher):
     """ CobaltFetcher is a fetcher that uses a given Cobalt instance to download media."""
     name = "cobalt"
 
+    url = ""
+
+    def __init__(self, url: str):
+        self.url = url
+
+    @property
+    def service_names(self) -> list[str]:
+        """ service_names returns a list of services that the Cobalt instance reports as being supported. """
+        response_data = httpx.get(self.url, headers=self._headers()).raise_for_status().json()
+        assert "cobalt" in response_data
+        return [(lambda x: x.capitalize())(svc) for svc in response_data['cobalt'].get('services', [])]
+
+    @property
+    def service_urls(self) -> list[str] | None:
+        """
+        service_urls returns the supported services that we can query for data.
+        Cobalt is a special instance: we attempt to download anything that is otherwise unsupported by another module.
+        """
+        # Special return: we support anything that the backend supports.
+        return None
+
     @classmethod
     def _headers(cls):
         """ _headers builds a set of JSON acceptance headers for an API request to a Cobalt instance. """
@@ -46,13 +67,6 @@ class CobaltFetcher(Fetcher):
                 cfg["videoQuality"] = "max"
 
         return cfg
-
-    @classmethod
-    def services_enquiry(cls, url: str) -> list[str]:
-        """ services_enquiry returns a list of services that the Cobalt instance reports as being supported. """
-        response_data = httpx.get(url, headers=cls._headers()).raise_for_status().json()
-        return response_data.get('services', [])
-
 
     def get_metadata(self, url: str, format: Format = Format.VIDEO_AUDIO) -> MediaMetadata | None:
         """ Cobalt can't presently return metadata without just downloading the file. """
