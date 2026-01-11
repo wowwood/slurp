@@ -1,2 +1,19 @@
+# Caches / bytecode
 /.direnv
-__pycache__
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+
+# Configuration
+config.toml
+
+# Virtualenvs
+venv/
+.venv/
+
+# Logs
+*.log
+
+# IDEA IDE
+.idea
