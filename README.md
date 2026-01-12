@@ -74,4 +74,23 @@ FETCHER_COBALT_URL = "http://127.0.0.1:9000/"
 >[!WARNING]
 > If you're running Cobalt locally, **please make sure it is correctly isolated from the internet!** 
 > You don't want external parties thrashing your download server. 
-> For an extra layer of security, consider using API keys as well.
+
+For extra security, it is strongly recommended to configure _Cobalt_ to require an API key - see the [Cobalt Documentation](https://github.com/imputnet/cobalt/blob/main/docs/protect-an-instance.md#configure-api-keys) for details.
+
+You will likely want the key for _Slurp_ to look something like this in _Cobalt_'s `keys.json`:
+
+```json
+{
+    "random-uuidv4-goes-here": {
+        "limit": "unlimited",
+        "ips": ["127.0.0.0/8"],
+        "userAgents": ["*slurp*"]
+    }
+}
+```
+
+Then simply configure _Slurp_ to use the API key for authentication:
+
+```toml
+FETCHER_COBALT_KEY = "random-uuidv4-goes-here"
+```
