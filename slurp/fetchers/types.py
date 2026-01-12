@@ -10,6 +10,23 @@ class Format(Enum):
     VIDEO_ONLY  = "Video Only (muted)"
     AUDIO_ONLY  = "Audio Only"
 
+@dataclass()
+class MediaMetadata:
+    """ MediaMetadata is a source-agnostic representation of any media available to be fetched. """
+    url: str
+    name: str = 'Unknown Name'
+
+    author: str = 'Unknown Author'
+    author_url: str | None = None
+
+    ts_upload: datetime | None = None
+
+    duration: str = 'Unknown Duration'
+
+    format: str = 'Unknown Format'
+
+    thumbnail_url: str | None = None
+
 
 class Fetcher:
     """ A Fetcher is an interface for downloading media from any supported external media source.
@@ -46,21 +63,3 @@ class Fetcher:
         :param filename:
         """
         pass
-
-
-@dataclass()
-class MediaMetadata:
-    """ MediaMetadata is a source-agnostic representation of any media available to be fetched. """
-    url: str
-    name: str = 'Unknown Name'
-
-    author: str = 'Unknown Author'
-    author_url: str | None = None
-
-    ts_upload: datetime | None = None
-
-    duration: str = 'Unknown Duration'
-
-    format: str = 'Unknown Format'
-
-    thumbnail_url: str | None = None

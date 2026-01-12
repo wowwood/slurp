@@ -1,0 +1,18 @@
+[Unit]
+Description=The Slurp content fetching server and API.
+After=network.target
+
+[Service]
+User=1001
+Group=1001
+WorkingDirectory=/usr/local/slurp
+Environment="PATH=/usr/local/slurp/.venv/bin"
+# Binds to localhost addresses (v4 and v6) by default. Tweak to your requirements.
+ExecStart=/usr/local/slurp/.venv/bin/gunicorn --workers 3 --bind [::1]:8000 slurp:create_app()
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

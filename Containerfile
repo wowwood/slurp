@@ -77,7 +77,7 @@ COPY --chown=python:python . .
 #RUN if [ "${FLASK_DEBUG}" != "true" ]; then \
 #  ln -s /public /app/public && SECRET_KEY=dummy flask digest compile && rm -rf /app/public; fi
 
-ENTRYPOINT ["/app/bin/entrypoint-web"]
+ENTRYPOINT ["/app/deploy/cri/bin/entrypoint-web"]
 
 EXPOSE 8000
 

@@ -1,8 +1,28 @@
-ytdlpls
-=======
+🥤 Slurp
+===
 
-Development
------------
+## Deployment
+___
+
+### CRI / Docker
+
+Ready-to-use CRI builds are available in the Packages area of this repository.
+
+### Directly (systemd / Gunicorn)
+
+First, ensure that you have downloaded _slurp_ to a directory on your system (e.g `/usr/local/slurp`).
+
+Next, make sure all dependencies are available (see "Development" below), and that Poetry has configured a venv at `.venv`.
+Also ensure that a valid configuration file is available at `config.toml` (see [Configuration](#Configuration)).
+
+Copy the service file located at [deploy/systemd/slurp.service](deploy/systemd/slurp.service) to your `/etc/systemd/system` directory.
+
+Modify it to fit your requirements, do `systemctl daemon-reload`, then you should be able to issue `systemctl start slurp` to get going.
+
+You can either expose this instance directly, or reverse-proxy it with something like _Træfik_ or _Caddy_.
+
+## Development
+___
 
 ### Install dependencies:
 
@@ -35,7 +55,8 @@ $ poetry run flask run --debug --host=0.0.0.0
 ```
 _The host flag exposes it on the local interface, not just on the machine itself_
 
-### Configuration
+# Configuration
+___
 
 Copy the `config.template.toml` file to `config.toml` and edit as you wish.
 
