@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o pipefail
+
+# Ensure we always have a valid up to date lock file.
+if ! test -f poetry.lock; then
+  poetry lock
+fi
+
+# Otherwise, use the existing lock file exactly how it is defined.
+poetry install --compile --only main --no-root
