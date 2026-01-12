@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -e
+
+# cp -r /public /app
+
+# Stubbed for now.
+exec "$@"
