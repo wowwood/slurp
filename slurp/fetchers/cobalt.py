@@ -18,7 +18,7 @@ class CobaltFetcher(Fetcher):
 
     def __init__(self, url: str, key: str=None):
         self.url = url
-        self.key = key if key is not '' else None
+        self.key = key if key != '' else None
 
     @property
     def service_names(self) -> list[str]:
