@@ -1,8 +1,18 @@
+# CSRF / Cookie signing key. Make this something random! See https://flask.palletsprojects.com/en/stable/config/#SECRET_KEY
 SECRET_KEY = "5Fh/gM4PA1NuQlWKXCKtlkeb6iDj01TYz1OtlSJ7I5Y="
+
+# Possible output directories. Delimit with OS path separator (: on unix, ; on Windows)
 OUTPUTS = "/tmp/slurp"
 
+# Enable the YTDLP fetcher.
 FETCHER_YTDLP_ENABLED = true
 
-FETCHER_COBALT_ENABLED = true
+# Cobalt fetcher settings.
+# Note: you must have a valid Cobalt instance to run queries against. See the README for more information.
+
+# Enable the Cobalt fetcher.
+FETCHER_COBALT_ENABLED = false
+# Cobalt instance URL (with trailing slash).
 FETCHER_COBALT_URL = "http://localhost:9000/"
-FETCHER_COBALT_KEY = "TESTBADKEY"
+# OPTIONAL: Cobalt API Key. Omit to use unauthenticated connection (make sure your instance is firewalled correctly!)
+# FETCHER_COBALT_KEY = "TESTBADKEY"
