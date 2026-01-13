@@ -5,31 +5,34 @@ from typing import Generator
 
 
 class Format(Enum):
-    """ A Format defines what format the targetted Media should be fetched in. """
+    """A Format defines what format the targetted Media should be fetched in."""
+
     VIDEO_AUDIO = "Video+Audio"
-    VIDEO_ONLY  = "Video Only (muted)"
-    AUDIO_ONLY  = "Audio Only"
+    VIDEO_ONLY = "Video Only (muted)"
+    AUDIO_ONLY = "Audio Only"
+
 
 @dataclass()
 class MediaMetadata:
-    """ MediaMetadata is a source-agnostic representation of any media available to be fetched. """
-    url: str
-    name: str = 'Unknown Name'
+    """MediaMetadata is a source-agnostic representation of any media available to be fetched."""
 
-    author: str = 'Unknown Author'
+    url: str
+    name: str = "Unknown Name"
+
+    author: str = "Unknown Author"
     author_url: str | None = None
 
     ts_upload: datetime | None = None
 
-    duration: str = 'Unknown Duration'
+    duration: str = "Unknown Duration"
 
-    format: str = 'Unknown Format'
+    format: str = "Unknown Format"
 
     thumbnail_url: str | None = None
 
 
 class Fetcher:
-    """ A Fetcher is an interface for downloading media from any supported external media source.
+    """A Fetcher is an interface for downloading media from any supported external media source.
 
     Attributes:
         name: Friendly name of the Fetcher
@@ -54,7 +57,9 @@ class Fetcher:
         """
         pass
 
-    def get_media(self, url: str, fmt: Format, directory: str, filename: str) -> Generator[str]:
+    def get_media(
+        self, url: str, fmt: Format, directory: str, filename: str
+    ) -> Generator[str]:
         """
         get_media fetches the media at the given URL, in the given format, and places it at the provided directory / filename.
         :param url:

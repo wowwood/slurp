@@ -8,6 +8,10 @@ ___
 
 Ready-to-use CRI builds are available in the Packages area of this repository.
 
+Example call:
+
+`[podman|docker] run -d --restart=always -v config.toml:/app/config.toml --name slurp wowwood/slurp`
+
 ### Directly (systemd / Gunicorn)
 
 First, ensure that you have downloaded _slurp_ to a directory on your system (e.g `/usr/local/slurp`).

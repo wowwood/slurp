@@ -1,5 +1,5 @@
 def format_duration(seconds: int) -> str:
-    """ format_duration nicely formats the given duration in seconds.
+    """format_duration nicely formats the given duration in seconds.
     :param seconds: the duration in seconds
     :return str: The duration formatted nicely, in hours, minutes, and seconds.
     """
