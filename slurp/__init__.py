@@ -103,17 +103,24 @@ def download():
 def create_app(config_filename: str = "config.toml") -> Flask:
     app = Flask(__name__)
     # app.config.from_prefixed_env(prefix='YDP')
-    app.config.from_file(
-        os.path.join(os.getcwd(), config_filename), load=tomllib.load, text=False
+    config_loaded = app.config.from_file(
+        os.path.join(os.getcwd(), config_filename),
+        load=tomllib.load,
+        text=False,
+        silent=True,
     )
+    if config_loaded:
+        app.logger.info("Configuration loaded successfully.")
+    else:
+        app.logger.warning("Failed to load configuration - using INSECURE defaults!")
     app.config["OUTPUTS"] = app.config.get("OUTPUTS", "").split(os.pathsep)
 
     # Fill fetchers config with configured fetchers.
-    if app.config.get("FETCHER_YTDLP_ENABLED") is True:
+    if app.config.get("FETCHER_YTDLP_ENABLED", True) is True:
         app.logger.info("YTDLP fetcher enabled")
         fetchers.append(YTDLPFetcher())
 
-    if app.config.get("FETCHER_COBALT_ENABLED") is True:
+    if app.config.get("FETCHER_COBALT_ENABLED", False) is True:
         app.logger.info("Cobalt fetcher enabled")
         fetchers.append(
             CobaltFetcher(
