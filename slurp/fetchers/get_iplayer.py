@@ -38,7 +38,7 @@ class BBCiPlayerFetcher(Fetcher):
                 text=True,
                 timeout=3,
             )
-        except subprocess.SubprocessError:
+        except (subprocess.SubprocessError, FileNotFoundError):
             return False
         return proc.returncode == 0
 
@@ -133,12 +133,12 @@ class BBCiPlayerFetcher(Fetcher):
         return data
 
     def _get_media(
-            self,
-            q: queue.Queue[FetcherUpdateEvent],
-            url: str,
-            fmt: Format,
-            directory: str,
-            filename: str,
+        self,
+        q: queue.Queue[FetcherUpdateEvent],
+        url: str,
+        fmt: Format,
+        directory: str,
+        filename: str,
     ):
         """
         Commence a download from BBC iPlayer.
@@ -241,11 +241,11 @@ class BBCiPlayerFetcher(Fetcher):
             q.shutdown()
 
     def fetch(
-            self,
-            url: str,
-            fmt: Format,
-            directory: str,
-            filename: str,
+        self,
+        url: str,
+        fmt: Format,
+        directory: str,
+        filename: str,
     ) -> Generator[FetcherUpdateEvent]:
         """get_media downloads the media at the given params in the foreground, returning log information by means of a Generator."""
         q: queue.Queue[FetcherUpdateEvent] = queue.Queue()
