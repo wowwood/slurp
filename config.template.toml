@@ -7,6 +7,10 @@ OUTPUTS = "/tmp/slurp"
 # Enable the YTDLP fetcher.
 FETCHER_YTDLP_ENABLED = true
 
+# Enable the get_iplayer fetcher.
+# Note: get_iplayer must be installed separately (we just call the binary).
+FETCHER_BBC_IPLAYER_ENABLED = true
+
 # Cobalt fetcher settings.
 # Note: you must have a valid Cobalt instance to run queries against. See the README for more information.
 
