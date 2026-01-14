@@ -2,82 +2,116 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.red.min.css">
-  <link rel="icon" type="image/png" href="/static/favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-  <link rel="shortcut icon" href="/static/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
-  <meta name="apple-mobile-web-app-title" content="YT DL" />
-  <link rel="manifest" href="/static/site.webmanifest" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.red.min.css">
+    <link rel="icon" type="image/png" href="/static/favicon-96x96.png" sizes="96x96"/>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+    <link rel="shortcut icon" href="/static/favicon.ico"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png"/>
+    <meta name="apple-mobile-web-app-title" content="YT DL"/>
+    <link rel="manifest" href="/static/site.webmanifest"/>
 
-  <style>
-    .bottom-form {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      /*background: */
-      padding: 1em 8em;
-      text-align: center;
-      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
-    }
+    <style>
+        .bottom-form {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            /*background: */
+            padding: 1em 8em;
+            text-align: center;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+        }
 
-    main.container {
-      padding-bottom: 10em;
-    }
+        main.container {
+            padding-bottom: 10em;
+        }
 
-    .video-meta {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
+        .fetcher-progress-message {
+            display: block;
+            padding: .2em .375em;
+        }
 
-    .video-meta ul.metadata-list {
-        list-style: none;
-        padding-left: 0;
-    }
-    .video-meta ul.metadata-list li {
-        display: inline;
-    }
-    .video-meta ul.metadata-list li:after { content: " \00b7"; }
-    .video-meta ul.metadata-list li:last-child:after { content: none; }
+        .fetcher-progress-message-lvl-error {
+            color: red;
+        }
 
-    .video-meta .thumbnail {
-      width: 120px;
-      height: auto;
-      border-radius: 4px;
-    }
+        .fetcher-progress-message-lvl-warning {
+            color: goldenrod;
+        }
 
-    hgroup h2 {
-      margin: 0;
-      font-size: 1.1rem;
-    }
+        .fetcher-progress-message-lvl-info {
+            color: lightskyblue;
+        }
 
-    hgroup p {
-      margin: 0.25rem 0 0;
-      color: #666;
-      font-size: 0.9rem;
-    }
-  </style>
+        .fetcher-progress-message-level-success {
+            color: green;
+        }
 
-  <title>{% block title %}Slurp{% endblock %}</title>
-  {% block head %}{% endblock %}
+        .fetcher-outcome {
+            margin-top: 2rem;
+        }
+
+        .video-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .video-meta ul.metadata-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .video-meta ul.metadata-list li {
+            display: inline;
+        }
+
+        .video-meta ul.metadata-list li:after {
+            content: " \00b7";
+        }
+
+        .video-meta ul.metadata-list li:last-child:after {
+            content: none;
+        }
+
+        .video-meta .thumbnail {
+            width: 120px;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        hgroup h2 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        hgroup p {
+            margin: 0.25rem 0 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+
+    <title>{% block title %}Slurp{% endblock %}</title>
+    {% block head %}{% endblock %}
 </head>
 
 <body>
-  <main class="container">
+<main class="container">
     {% block main %}
-    <pre>template did not override 'main' block</pre>{% endblock %}
-  </main>
+        <pre>template did not override 'main' block</pre>{% endblock %}
+</main>
 </body>
 <script type="text/javascript">
-  const resizeObserver = new ResizeObserver((_) => {
-    window.scrollTo(0, document.body.scrollHeight);
-  });
-  resizeObserver.observe(document.body);
+    const resizeObserver = new ResizeObserver((_) => {
+        window.scrollTo(0, document.body.scrollHeight);
+    });
+    resizeObserver.observe(document.body);
 </script>
 
 </html>

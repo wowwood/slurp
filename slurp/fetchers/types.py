@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -5,7 +6,7 @@ from typing import Generator
 
 
 class Format(Enum):
-    """A Format defines what format the targetted Media should be fetched in."""
+    """A Format defines what format the target Media should be fetched in."""
 
     VIDEO_AUDIO = "Video+Audio"
     VIDEO_ONLY = "Video Only (muted)"
@@ -31,11 +32,35 @@ class MediaMetadata:
     thumbnail_url: str | None = None
 
 
-class Fetcher:
+class FetcherUpdateEvent(ABC):
+    """A FetcherUpdateEvent is any event that happens over the course of a fetcher's fetching lifespan."""
+
+    pass
+
+
+@dataclass()
+class FetcherProgressReport(FetcherUpdateEvent):
+    """FetcherProgressReport is a FetcherUpdateEvent representing a report of progress, new data, or a log message."""
+
+    typ: str
+    level: str
+    message: str
+    status: int = 0
+
+
+@dataclass()
+class FetcherMediaMetadataAvailable(FetcherUpdateEvent):
+    """FetcherMediaMetadataAvailable is a FetcherUpdateEvent fired when the metadata of the given media is available."""
+
+    metadata: MediaMetadata
+
+
+class Fetcher(ABC):
     """A Fetcher is an interface for downloading media from any supported external media source.
 
     Attributes:
         name: Friendly name of the Fetcher
+        priority: How urgently this Fetcher should be selected (0 has highest priority, then incrementing)
         service_names: list[str]: Friendly names of services this fetcher supports.
         service_urls: list[str] | None: List of domains that this fetcher supports grabbing media from.
             If set to None, then this service will attempt to download literally anything as a last resort.
@@ -43,25 +68,32 @@ class Fetcher:
 
     name: str
 
+    priority: int
+
     service_names: list[str]
 
     service_urls: list[str] | None
 
-    def get_metadata(self, url: str, fmt: Format) -> MediaMetadata | None:
-        """
-        get_metadata fetches ONLY metadata about the media at the given URL.
-        This is used to provide early metadata information.
-        :param url: Target URL
-        :param fmt: The desired media scrape format.
-        :return: A MediaMetadata object, or None if it is not possible to retrieve early media metadata.
-        """
-        pass
+    @property
+    @abstractmethod
+    def ready(self) -> bool:
+        """A Fetcher is Ready when it can handle requests (configuration is valid, can connect to backend, etc."""
+        return False
 
-    def get_media(
-        self, url: str, fmt: Format, directory: str, filename: str
-    ) -> Generator[str]:
+    @abstractmethod
+    def fetch(
+        self,
+        url: str,
+        fmt: Format,
+        directory: str,
+        filename: str,
+    ) -> Generator[FetcherUpdateEvent]:
         """
-        get_media fetches the media at the given URL, in the given format, and places it at the provided directory / filename.
+        fetch fetches the media at the given URL, in the given format, and places it at the provided directory / filename.
+        Updates are provided over the returned generator.
+
+        If early metadata for the given media is available, return a MediaMetadata object.
+        Otherwise, return FetcherProgress objects.
         :param url:
         :param fmt:
         :param directory:

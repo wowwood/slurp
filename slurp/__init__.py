@@ -1,5 +1,6 @@
 import os
 import tomllib
+from typing import Generator
 
 from flask import (
     Blueprint,
@@ -13,8 +14,18 @@ from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField, URLField
 from wtforms.validators import URL, AnyOf, DataRequired
 
-from slurp.fetchers import CobaltFetcher, YTDLPFetcher, determine_fetcher, fetchers
-from slurp.fetchers.types import Format
+from slurp.fetchers import (
+    fetchers,
+    fetchers_for_url,
+)
+from slurp.fetchers.cobalt import CobaltFetcher
+from slurp.fetchers.types import (
+    Fetcher,
+    FetcherMediaMetadataAvailable,
+    FetcherProgressReport,
+    Format,
+)
+from slurp.fetchers.ytdlp import YTDLPFetcher
 from slurp.helpers import format_duration
 
 
@@ -40,6 +51,39 @@ def index():
     return render_template("index.html", form=form, fetchers=fetchers)
 
 
+def fetch(
+    fetchers: list[Fetcher], url: str, format: Format, target: str, slug: str
+) -> Generator[str]:
+    """fetch is a rudimentary function that fetches the given media, yielding to generated HTML strings for progress reports."""
+    # Get metadata from the first possible fetcher.
+    success: bool = False
+    for fetcher in fetchers:
+        yield f"<code class='fetcher-progress-message'>🛫 Fetching with {fetcher.name}...</code>"
+        for item in fetcher.fetch(url, format, target, slug):
+            if item is None:
+                break
+            match item:
+                case FetcherMediaMetadataAvailable() as i:
+                    # Metadata for this fetch now available.
+                    yield render_template("elements/media.html", metadata=i.metadata)
+                case FetcherProgressReport() as i:
+                    yield render_template("elements/progress_report.html", event=i)
+                    if i.typ == "finish":
+                        if i.status == 0:
+                            # Success
+                            success = True
+                            break
+                        else:
+                            yield f"<code><b>Fetcher failed! Reason: {i.message}</b></code>"
+        if success:
+            yield "<article class='fetcher-outcome fetcher-progress-message-level-success'>🥤 Media slurped</article>"
+            break
+    if not success:
+        yield "<article class='fetcher-outcome fetcher-progress-message-level-error'>☹️ Slurp failed - out of available fetchers.</article>"
+
+    return
+
+
 @main_blueprint.post("/download")
 def download():
     form = DownloadForm()
@@ -47,17 +91,19 @@ def download():
     if not form.validate_on_submit():
         return form.errors
 
-    try:
-        fetcher = determine_fetcher(form.url.data)
-    except ValueError as e:
-        return str(e), 400
+    fetchers = fetchers_for_url(form.url.data)
+    if len(fetchers) == 0:
+        # No fetchers available for this URL.
+        return "No fetchers are available for the given URL.", 400
 
     return stream_template(
         "download.html",
-        fetcher=fetcher,
-        metadata=fetcher.get_metadata(form.url.data, Format[form.format.data]),
-        output=fetcher.get_media(
-            form.url.data, Format[form.format.data], form.directory.data, form.slug.data
+        output=fetch(
+            fetchers,
+            form.url.data,
+            Format[form.format.data],
+            form.directory.data,
+            form.slug.data,
         ),
     )
 

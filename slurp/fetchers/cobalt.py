@@ -5,9 +5,14 @@ import threading
 from typing import Generator
 
 import httpx
-from markupsafe import escape
 
-from slurp.fetchers.types import Fetcher, Format, MediaMetadata
+from slurp.fetchers.types import (
+    Fetcher,
+    FetcherMediaMetadataAvailable,
+    FetcherProgressReport,
+    FetcherUpdateEvent,
+    Format,
+)
 
 
 class CobaltFetcher(Fetcher):
@@ -15,12 +20,28 @@ class CobaltFetcher(Fetcher):
 
     name = "cobalt"
 
+    # We handle basically anything that isn't handled by other fetchers - very low priority.
+    priority = 1000
+
     url = ""
     key: str | None = None
 
     def __init__(self, url: str, key: str = None):
         self.url = url
         self.key = key if key != "" else None
+
+    @property
+    def ready(self) -> bool:
+        """We're Ready if we can access the Cobalt instance."""
+        if self.url == "":
+            return False
+        try:
+            response_data = (
+                httpx.get(self.url, headers=self._headers()).raise_for_status().json()
+            )
+            return "cobalt" in response_data
+        except httpx.HTTPError:
+            return False
 
     @property
     def service_names(self) -> list[str]:
@@ -79,12 +100,6 @@ class CobaltFetcher(Fetcher):
 
         return cfg
 
-    def get_metadata(
-        self, url: str, fmt: Format = Format.VIDEO_AUDIO
-    ) -> MediaMetadata | None:
-        """Cobalt can't presently return metadata without just downloading the file."""
-        return None
-
     def _get_media(
         self, q: queue.Queue, url: str, fmt: Format, directory: str, filename: str
     ):
@@ -97,34 +112,48 @@ class CobaltFetcher(Fetcher):
 
         try:
             response = httpx.post(
-                "http://localhost:9000/",
+                self.url,
                 headers=self._headers(),
                 json=self._req_data(url, fmt),
             )
-            response_data = response.json()
             response.raise_for_status()
+            response_data = response.json()
         except httpx.HTTPStatusError as e:
-            if response_data.get("error") is not None:
+            # Attempt decode anyway.
+            try:
+                response_data = e.response.json()
+            except Exception:
+                pass
+            if response_data and response_data.get("error") is not None:
                 q.put(
-                    (
-                        "error",
-                        f"cobalt backend returned status {e.response.status_code}: {response_data['error'].get('code', 'Unknown Error')}",
+                    FetcherProgressReport(
+                        typ="log",
+                        level="error",
+                        status=e.response.status_code,
+                        message=f"cobalt backend returned status {e.response.status_code}: {response_data['error'].get('code', 'Unknown Error')}",
                     )
                 )
             else:
                 q.put(
-                    (
-                        "error",
-                        f"cobalt backend returned status {e.response.status_code}: {e}",
+                    FetcherProgressReport(
+                        typ="finish",
+                        level="error",
+                        status=e.response.status_code,
+                        message=f"cobalt backend returned status {e.response.status_code}: {e}",
                     )
                 )
-            q.put(("finish", 1))
-            q.put(None)
+            q.shutdown()
             return
         except Exception as e:
-            q.put(("error", f"cobalt request exception: {e}"))
-            q.put(("finish", 1))
-            q.put(None)
+            q.put(
+                FetcherProgressReport(
+                    typ="finish",
+                    level="error",
+                    status=1,
+                    message=f"cobalt request exception: {e}",
+                )
+            )
+            q.shutdown()
             return
 
         # Assurance that we've got the expected response type
@@ -133,23 +162,34 @@ class CobaltFetcher(Fetcher):
             assert "url" in response_data
             assert "filename" in response_data
         except AssertionError as e:
-            q.put(("error", f"unexpected cobalt response: {e}"))
+            q.put(
+                FetcherProgressReport(
+                    typ="finish",
+                    level="error",
+                    status=1,
+                    message=f"unexpected cobalt response: {e}",
+                )
+            )
+            q.shutdown()
+            return
 
         match response_data.get("status", None):
             case "tunnel":
                 # Tunneled response
                 q.put(
-                    (
-                        "info",
-                        f"Received Tunnel - fetching {response_data.get('filename')} from remux...",
+                    FetcherProgressReport(
+                        typ="log",
+                        level="info",
+                        message=f"Received Tunnel - fetching {response_data.get('filename')} from remux...",
                     )
                 )
             case "redirect":
                 # Redirection to origin download
                 q.put(
-                    (
-                        "info",
-                        f"Received Redirect - fetching {response_data.get('filename')} from origin...",
+                    FetcherProgressReport(
+                        typ="log",
+                        level="info",
+                        message=f"Received Redirect - fetching {response_data.get('filename')} from origin...",
                     )
                 )
 
@@ -165,93 +205,106 @@ class CobaltFetcher(Fetcher):
             with open(target, mode="wb") as f:
                 with httpx.stream("GET", response_data.get("url")) as r:
                     num_bytes_downloaded = r.num_bytes_downloaded
-                    if r.headers.get("content-length") is not None:
-                        q.put(
-                            (
-                                "info",
-                                f"Downloading media: size {r.headers.get('content-length')}B",
-                            )
-                        )
-                    elif r.headers.get("estimated-content-length") is not None:
-                        q.put(
-                            (
-                                "info",
-                                f"Downloading media: APPROXIMATE size {r.headers.get('estimated-content-length')}B",
-                            )
-                        )
-                    else:
-                        q.put(("info", "Downloading file..."))
 
+                    msg: str = "Downloading file..."
+                    if r.headers.get("content-length") is not None:
+                        msg = f"Downloading media: size {r.headers.get('content-length')}B"
+                    elif r.headers.get("estimated-content-length") is not None:
+                        msg = f"Downloading media: APPROXIMATE size {r.headers.get('estimated-content-length')}B"
+
+                    q.put(FetcherProgressReport(typ="log", level="info", message=msg))
                     for data in r.iter_bytes():
                         f.write(data)
+                        print(f"written {r.num_bytes_downloaded} bytes")
                         num_bytes_downloaded = r.num_bytes_downloaded
 
                     q.put(
-                        (
-                            "debug",
-                            f"cobalt download complete - size {num_bytes_downloaded}B",
+                        FetcherProgressReport(
+                            typ="log",
+                            level="info",
+                            message=f"cobalt download complete - size {num_bytes_downloaded}B",
                         )
                     )
                     if num_bytes_downloaded == 0:
                         raise Exception("no bytes received")
         except Exception as e:
-            q.put(("error", f"cobalt download exception: {e}"))
-            q.put(("finish", 1))
-            q.put(None)
+            q.put(
+                FetcherProgressReport(
+                    typ="finish",
+                    level="error",
+                    status=1,
+                    message=f"exception occurred: {e}",
+                )
+            )
+            q.shutdown()
             return
 
         # Once writing is finished, move to final location
         # Done using an OS move command so that the OS filesystem properly locks / unlocks the target
         # (which means any processing up the pipe from us doesn't start trying to read the file prematurely)
         q.put(
-            (
-                "info",
-                f"Moving file from temporary directory to {directory}/{filename}{extension}",
+            FetcherProgressReport(
+                typ="log",
+                level="info",
+                message=f"Moving file from temporary directory to {directory}/{filename}{extension}",
             )
         )
+
         try:
             shutil.move(target, f"{directory}/{filename}{extension}")
         except Exception as e:
-            q.put(("error", f"error moving downloaded file: {e}"))
-            q.put(("finish", 1))
-            q.put(None)
+            q.put(
+                FetcherProgressReport(
+                    typ="finish",
+                    level="error",
+                    status=1,
+                    message=f"exception occurred moving downloaded file: {e}",
+                )
+            )
+            q.shutdown()
             return
 
         # signals end of stream
-        q.put(("finish", 0))
-        q.put(None)
-
-    def get_media(
-        self, url: str, fmt: Format, directory: str, filename: str
-    ) -> Generator[str]:
-        """get_media downloads the media at the given params in the foreground, returning log information by means of a Generator."""
-        q = queue.Queue()
-
-        # Start background thread to run the pybalt download
-        t = threading.Thread(
-            target=self._get_media(q, url, fmt, directory, filename), daemon=True
+        q.put(
+            FetcherProgressReport(
+                typ="finish",
+                level="info",
+                status=0,
+                message="Fetcher complete",
+            )
         )
-        t.start()
+        q.shutdown()
+        return
+
+    def fetch(
+        self,
+        url: str,
+        fmt: Format,
+        directory: str,
+        filename: str,
+    ) -> Generator[FetcherUpdateEvent]:
+        """get_media downloads the media at the given params in the foreground, returning log information by means of a Generator."""
+        q: queue.Queue[FetcherUpdateEvent] = queue.Queue()
 
         # We need to run the download on a thread so we can continue to execute our client response
+        thread = threading.Thread(
+            target=self._get_media(q, url, fmt, directory, filename), daemon=True
+        )
+        thread.start()
 
         while True:
-            item = q.get()
-            if item is None:
+            try:
+                # Reasonably sane timeout, just to stop us endlessly spinning.
+                event: FetcherUpdateEvent = q.get(timeout=300)
+            except queue.ShutDown:
+                # End of data.
                 break
-            typ, payload = item
-            line_fmt = ""
-            match typ:
-                case "info":
-                    line_fmt = "color: blue"
-                case "warn":
-                    line_fmt = "color: orange"
-                case "error":
-                    line_fmt = "color: red"
-                case "finish":
-                    if payload != 0:
-                        yield "<span style='color:red'>❌ Slurp failed!</span> Please check the logs above."
-                    else:
-                        yield "<span style='color:green'>🥤 Slurp successful</span>"
-                    continue
-            yield f"<span style='{line_fmt}'>{typ}</span>: {escape(payload)}"
+            match event:
+                case FetcherProgressReport() as i:
+                    if i.typ == "finish":
+                        yield i
+                        # Break the generator.
+                        break
+                    yield i
+                case FetcherMediaMetadataAvailable() as i:
+                    yield i
