@@ -69,13 +69,13 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false
 
-      - name: Attest SBOM
-        uses: actions/attest-sbom@v2
-        with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/slurp
-          subject-digest: ${{ steps.build-push.outputs.digest }}
-          sbom-path: 'sbom.json'
-          push-to-registry: true
+  #      - name: Attest SBOM
+  #        uses: actions/attest-sbom@v2
+  #        with:
+  #          subject-name: ghcr.io/${{ github.repository_owner }}/slurp
+  #          subject-digest: ${{ steps.build-push.outputs.digest }}
+  #          sbom-path: 'sbom.json'
+  #          push-to-registry: true
 
   cri-bundle-manifest:
     runs-on: ubuntu-latest
