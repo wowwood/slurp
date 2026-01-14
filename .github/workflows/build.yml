@@ -18,10 +18,10 @@ jobs:
     strategy:
       matrix:
         arch:
-          - os: ubuntu-25.10
+          - os: ubuntu-24.04
             name: linux/amd64
             label: linux-amd64
-          - os: ubuntu-25.10-arm
+          - os: ubuntu-24.04-arm
             name: linux/arm64
             label: linux-arm64
     runs-on: ${{ matrix.arch.os }}
