@@ -20,7 +20,6 @@ from slurp.fetchers import (
 )
 from slurp.fetchers.cobalt import CobaltFetcher
 from slurp.fetchers.types import (
-    Fetcher,
     FetcherMediaMetadataAvailable,
     FetcherProgressReport,
     Format,
@@ -51,30 +50,29 @@ def index():
     return render_template("index.html", form=form, fetchers=fetchers)
 
 
-def fetch(
-    fetchers: list[Fetcher], url: str, format: Format, target: str, slug: str
-) -> Generator[str]:
-    """fetch is a rudimentary function that fetches the given media, yielding to generated HTML strings for progress reports."""
-    # Get metadata from the first possible fetcher.
+def stream_fetch(url: str, format: Format, target: str, slug: str) -> Generator[str]:
+    """stream_fetch is a rudimentary function that fetches the given media, yielding to generated HTML strings for progress reports."""
+    fetchers = fetchers_for_url(url)
+    if len(fetchers) == 0:
+        yield "<article class='fetcher-outcome fetcher-progress-message-level-error'>☹️ Slurp failed - no fetchers can handle this request. Check URL?</article>"
+        return
+
     success: bool = False
-    for fetcher in fetchers:
-        yield f"<code class='fetcher-progress-message'>🛫 Fetching with {fetcher.name}...</code>"
-        for item in fetcher.fetch(url, format, target, slug):
-            if item is None:
-                break
-            match item:
-                case FetcherMediaMetadataAvailable() as i:
+    for idx, fetcher in enumerate(fetchers):
+        yield f"<code class='fetcher-progress-message'>🛫 {'Trying Fetch again' if idx > 0 else 'Fetching'} with {fetcher.name}...</code>"
+        for event in fetcher.fetch(url, format, target, slug):
+            match event:
+                case FetcherMediaMetadataAvailable() as e:
                     # Metadata for this fetch now available.
-                    yield render_template("elements/media.html", metadata=i.metadata)
-                case FetcherProgressReport() as i:
-                    yield render_template("elements/progress_report.html", event=i)
-                    if i.typ == "finish":
-                        if i.status == 0:
+                    yield render_template("elements/media.html", metadata=e.metadata)
+                case FetcherProgressReport() as e:
+                    yield render_template("elements/progress_report.html", event=e)
+                    if e.typ == "finish":
+                        if e.status == 0:
                             # Success
                             success = True
-                            break
                         else:
-                            yield f"<code><b>Fetcher failed! Reason: {i.message}</b></code>"
+                            yield f"<code><b>🛬 Fetcher failed! Reason: {e.message}</b></code>"
         if success:
             yield "<article class='fetcher-outcome fetcher-progress-message-level-success'>🥤 Media slurped</article>"
             break
@@ -91,15 +89,9 @@ def download():
     if not form.validate_on_submit():
         return form.errors
 
-    fetchers = fetchers_for_url(form.url.data)
-    if len(fetchers) == 0:
-        # No fetchers available for this URL.
-        return "No fetchers are available for the given URL.", 400
-
     return stream_template(
         "download.html",
-        output=fetch(
-            fetchers,
+        output=stream_fetch(
             form.url.data,
             Format[form.format.data],
             form.directory.data,
