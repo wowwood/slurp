@@ -1,0 +1,26 @@
+{% block main %}
+    <code>🔎 Media Metadata found:</code>
+    <section class="video-meta">
+        {% if metadata %}
+            {% if metadata.thumbnail_url %}
+                <img alt="Media thumbnail" class="thumbnail" src="{{ metadata.thumbnail_url }}">
+            {% endif %}
+
+            <hgroup>
+                <h2><a href="{{ metadata.url }}">{{ metadata.name }}</a></h2>
+                <list>
+                    <ul class="metadata-list">
+                        <li><a href="{{ metadata.author_url }}">{{ metadata.author }}</a></li>
+                        <li>{{ metadata.ts_upload.strftime('%d/%m/%Y') }}</li>
+                        <li>{{ metadata.duration|duration }}</li>
+                        <li>{{ metadata.format }}</li>
+                    </ul>
+                </list>
+            </hgroup>
+        {% else %}
+            <hgroup>
+                <h2>Unknown media</h2>
+            </hgroup>
+        {% endif %}
+    </section>
+{% endblock %}

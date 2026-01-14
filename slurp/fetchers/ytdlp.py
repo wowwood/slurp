@@ -3,10 +3,15 @@ import threading
 from datetime import datetime, timezone
 from typing import Generator
 
-from markupsafe import escape
 from yt_dlp import YoutubeDL
 
-from slurp.fetchers.types import Fetcher, Format, MediaMetadata
+from slurp import FetcherMediaMetadataAvailable, FetcherProgressReport
+from slurp.fetchers.types import (
+    Fetcher,
+    FetcherUpdateEvent,
+    Format,
+    MediaMetadata,
+)
 
 
 class YTDLPFetcher(Fetcher):
@@ -14,30 +19,36 @@ class YTDLPFetcher(Fetcher):
 
     name = "yt-dlp"
 
+    # YT-DLP is always ready.
+    ready = True
+
+    # We're quite a specific fetcher, so relatively high priority.
+    priority = 10
+
     service_names = ["Youtube"]
     service_urls = ["youtube.com", "youtu.be"]
 
     class _Queuelogger:
         """queueLogger provides a yt-dlp compatible logging interface that emits exclusively to a queue."""
 
-        def __init__(self, q: queue.Queue):
+        def __init__(self, q: queue.Queue[FetcherUpdateEvent]):
             self.q = q
 
         def debug(self, msg):
             # As recommended by library documentation
             if msg.startswith("[debug] "):
-                self.q.put(("debug", msg))
+                self.q.put(FetcherProgressReport(typ="log", level="debug", message=msg))
             else:
                 self.info(msg)
 
         def info(self, msg):
-            self.q.put(("info", msg))
+            self.q.put(FetcherProgressReport(typ="log", level="info", message=msg))
 
         def warning(self, msg):
-            self.q.put(("warn", msg))
+            self.q.put(FetcherProgressReport(typ="log", level="warning", message=msg))
 
         def error(self, msg):
-            self.q.put(("error", msg))
+            self.q.put(FetcherProgressReport(typ="log", level="error", message=msg))
 
     @classmethod
     def _format_config(cls, fmt: Format) -> dict:
@@ -66,8 +77,10 @@ class YTDLPFetcher(Fetcher):
             case _:
                 raise ValueError("invalid format")
 
-    def get_metadata(self, url: str, fmt: Format = Format.VIDEO_AUDIO) -> MediaMetadata:
-        """get_metadata returns MediaMetadata for the given url."""
+    def _get_metadata(
+        self, url: str, fmt: Format = Format.VIDEO_AUDIO
+    ) -> MediaMetadata:
+        """_get_metadata returns MediaMetadata for the given url."""
         data = MediaMetadata(url)
         with YoutubeDL(self._format_config(fmt)) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -90,7 +103,12 @@ class YTDLPFetcher(Fetcher):
         return data
 
     def _get_media(
-        self, q: queue.Queue, url: str, fmt: Format, directory: str, filename: str
+        self,
+        q: queue.Queue[FetcherUpdateEvent],
+        url: str,
+        fmt: Format,
+        directory: str,
+        filename: str,
     ):
         """
         Commence a download from YouTube.
@@ -110,20 +128,44 @@ class YTDLPFetcher(Fetcher):
             | self._format_config(fmt)
         )
         try:
-            with YoutubeDL(opts) as ydl:
-                ydl.download([url])
-        except Exception as e:
-            q.put(("error", f"download exception: {e}"))
-            q.put(("finish", 1))
-        finally:
-            # signals end of stream
-            q.put(None)
+            # We support early metadata - send that if it's available.
+            metadata = self._get_metadata(url, fmt)
+            if metadata.name != "":
+                event = FetcherMediaMetadataAvailable(metadata=metadata)
+                q.put(event)
 
-    def get_media(
-        self, url: str, fmt: Format, directory: str, filename: str
-    ) -> Generator[str]:
+            with YoutubeDL(opts) as ydl:
+                code = ydl.download([url])
+                q.put(
+                    FetcherProgressReport(
+                        typ="finish",
+                        level="info",
+                        status=code,
+                        message="Fetcher complete",
+                    )
+                )
+        except Exception as e:
+            q.put(
+                FetcherProgressReport(
+                    typ="finish",
+                    level="error",
+                    status=1,
+                    message=f"Fetcher Exception: {e}",
+                )
+            )
+        finally:
+            # signal end of data
+            q.shutdown()
+
+    def fetch(
+        self,
+        url: str,
+        fmt: Format,
+        directory: str,
+        filename: str,
+    ) -> Generator[FetcherUpdateEvent]:
         """get_media downloads the media at the given params in the foreground, returning log information by means of a Generator."""
-        q = queue.Queue()
+        q: queue.Queue[FetcherUpdateEvent] = queue.Queue()
 
         # We need to run the download on a thread so we can continue to execute our client response
         thread = threading.Thread(
@@ -132,22 +174,18 @@ class YTDLPFetcher(Fetcher):
         thread.start()
 
         while True:
-            item = q.get()
-            if item is None:
+            try:
+                # Reasonably sane timeout, just to stop us endlessly spinning.
+                event: FetcherUpdateEvent = q.get(timeout=300)
+            except queue.ShutDown:
+                # End of data.
                 break
-            typ, payload = item
-            line_fmt = ""
-            match typ:
-                case "info":
-                    line_fmt = "color: blue"
-                case "warn":
-                    line_fmt = "color: orange"
-                case "error":
-                    line_fmt = "color: red"
-                case "finish":
-                    if payload != 0:
-                        yield "<span style='color:red'>❌ Slurp failed!</span> Please check the logs above."
-                    else:
-                        yield "<span style='color:green'>🥤Slurp successful</span>"
-                    continue
-            yield f"<span style='{line_fmt}'>{typ}</span>: {escape(payload)}"
+            match event:
+                case FetcherProgressReport() as i:
+                    if i.typ == "finish":
+                        yield i
+                        # Break the generator.
+                        break
+                    yield i
+                case FetcherMediaMetadataAvailable() as i:
+                    yield i
