@@ -2,7 +2,7 @@ import httpx
 import pytest
 
 from slurp import BBCiPlayerFetcher
-from slurp.fetchers.exceptions import AmbiguousQueryError, NoUpstreamMetadataError
+from slurp.fetchers.exceptions import NoUpstreamMetadataError
 
 
 def __can_run_tests():

@@ -5,9 +5,10 @@ from typing import Generator
 
 from yt_dlp import YoutubeDL
 
-from slurp import FetcherMediaMetadataAvailable, FetcherProgressReport
 from slurp.fetchers.types import (
     Fetcher,
+    FetcherMediaMetadataAvailable,
+    FetcherProgressReport,
     FetcherUpdateEvent,
     Format,
     MediaMetadata,
