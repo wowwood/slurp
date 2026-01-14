@@ -19,6 +19,7 @@ from slurp.fetchers import (
     fetchers_for_url,
 )
 from slurp.fetchers.cobalt import CobaltFetcher
+from slurp.fetchers.get_iplayer import BBCiPlayerFetcher
 from slurp.fetchers.types import (
     FetcherMediaMetadataAvailable,
     FetcherProgressReport,
@@ -128,6 +129,10 @@ def create_app(config_filename: str = "config.toml") -> Flask:
                 app.config.get("FETCHER_COBALT_KEY", None),
             )
         )
+
+    if app.config.get("FETCHER_BBC_IPLAYER_ENABLED", True) is True:
+        app.logger.info("get_iplayer fetcher enabled")
+        fetchers.append(BBCiPlayerFetcher())
 
     if len(fetchers) == 0:
         # No fetchers configured - fatal error.
