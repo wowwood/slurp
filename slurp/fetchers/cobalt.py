@@ -127,7 +127,7 @@ class CobaltFetcher(Fetcher):
             if response_data and response_data.get("error") is not None:
                 q.put(
                     FetcherProgressReport(
-                        typ="log",
+                        typ="finish",
                         level="error",
                         status=e.response.status_code,
                         message=f"cobalt backend returned status {e.response.status_code}: {response_data['error'].get('code', 'Unknown Error')}",
