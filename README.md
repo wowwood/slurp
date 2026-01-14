@@ -91,7 +91,7 @@ The _get\_iplayer_ fetcher grabs media in up to HD quality using an installed co
 of [get_iplayer](https://github.com/get-iplayer/get_iplayer/tree/master).
 It's up to you to ensure `get_iplayer` is available on your system to be called by _Slurp_.
 
-> [!INFO]
+> [!IMPORTANT]
 > This is quite a rudimentary fetcher, and may be replaced / removed at a later date.
 
 #### Cobalt
