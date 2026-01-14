@@ -34,15 +34,15 @@
             padding: .2em .375em;
         }
 
-        .fetcher-progress-message-lvl-error {
+        .fetcher-progress-message-level-error {
             color: red;
         }
 
-        .fetcher-progress-message-lvl-warning {
+        .fetcher-progress-message-level-warning {
             color: goldenrod;
         }
 
-        .fetcher-progress-message-lvl-info {
+        .fetcher-progress-message-level-info {
             color: lightskyblue;
         }
 
@@ -104,7 +104,8 @@
 <body>
 <main class="container">
     {% block main %}
-        <pre>template did not override 'main' block</pre>{% endblock %}
+        <pre>template did not override 'main' block</pre>
+    {% endblock %}
 </main>
 </body>
 <script type="text/javascript">
