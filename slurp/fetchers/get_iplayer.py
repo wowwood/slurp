@@ -31,7 +31,7 @@ class BBCiPlayerFetcher(Fetcher):
 
     def __backend_available(self) -> bool:
         """__backend_available returns True if we can call get_iplayer. Exception thrown otherwise."""
-        assert self._bin_name is str
+        assert self._bin_name is not ""
         try:
             proc = subprocess.run(
                 [self._bin_name, "-V"],
