@@ -6,6 +6,7 @@ from typing import Generator
 
 import httpx
 
+from slurp.fetchers.exceptions import FetcherMisconfiguredError
 from slurp.fetchers.types import (
     Fetcher,
     FetcherMediaMetadataAvailable,
@@ -29,18 +30,29 @@ class CobaltFetcher(Fetcher):
     def __init__(self, url: str, key: str = None):
         self.url = url
         self.key = key if key != "" else None
+        # Test the backend is available. If it isn't, we throw an initialization exception.
+        self.__backend_available()
 
-    @property
-    def ready(self) -> bool:
-        """We're Ready if we can access the Cobalt instance."""
+    def __backend_available(self) -> bool:
+        """__backend_available returns True if the Cobalt instance is available. It throws an exception otherwise."""
         if self.url == "":
-            return False
+            raise FetcherMisconfiguredError("Fetcher URL not set correctly.")
         try:
             response_data = (
                 httpx.get(self.url, headers=self._headers()).raise_for_status().json()
             )
-            return "cobalt" in response_data
-        except httpx.HTTPError:
+            assert "cobalt" in response_data
+        except (AssertionError, httpx.HTTPError) as e:
+            raise FetcherMisconfiguredError(f"Cannot communicate with backend: {e}")
+
+        return True
+
+    @property
+    def ready(self) -> bool:
+        """We're Ready if we can access the Cobalt instance."""
+        try:
+            return self.__backend_available()
+        except (FetcherMisconfiguredError, httpx.HTTPError):
             return False
 
     @property
