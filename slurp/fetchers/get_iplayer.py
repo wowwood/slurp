@@ -10,6 +10,7 @@ from datetime import datetime
 from glob import glob
 from typing import Generator
 
+from slurp import FetcherMisconfiguredError
 from slurp.fetchers.exceptions import AmbiguousQueryError, NoUpstreamMetadataError
 from slurp.fetchers.types import (
     Fetcher,
@@ -28,9 +29,9 @@ class BBCiPlayerFetcher(Fetcher):
 
     _bin_name = "get_iplayer"
 
-    @property
-    def ready(self) -> bool:
-        """We're Ready if the get_iplayer binary is available."""
+    def __backend_available(self) -> bool:
+        """__backend_available returns True if we can call get_iplayer. Exception thrown otherwise."""
+        assert self._bin_name != ""
         try:
             proc = subprocess.run(
                 [self._bin_name, "-V"],
@@ -38,9 +39,21 @@ class BBCiPlayerFetcher(Fetcher):
                 text=True,
                 timeout=3,
             )
-        except (subprocess.SubprocessError, FileNotFoundError):
+        except (subprocess.SubprocessError, FileNotFoundError) as e:
+            raise FetcherMisconfiguredError(f"Cannot call get_iplayer binary: {e}")
+        if proc.returncode != 0:
+            raise FetcherMisconfiguredError(
+                f"Cannot call get_iplayer binary: {self._bin_name} returned {proc.returncode}"
+            )
+        return True
+
+    @property
+    def ready(self) -> bool:
+        """We're Ready if the get_iplayer binary is available."""
+        try:
+            return self.__backend_available()
+        except FetcherMisconfiguredError:
             return False
-        return proc.returncode == 0
 
     # We're quite a specific fetcher, so relatively high priority.
     priority = 10

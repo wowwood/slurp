@@ -2,16 +2,7 @@ import httpx
 import pytest
 
 from slurp import BBCiPlayerFetcher
-from slurp.fetchers.exceptions import NoUpstreamMetadataError
-
-
-def __can_run_tests():
-    try:
-        httpx.get("https://www.bbc.co.uk/iplayer")
-    except (httpx.RequestError, httpx.ConnectError):
-        return False
-    return True
-
+from slurp.fetchers.exceptions import FetcherMisconfiguredError, NoUpstreamMetadataError
 
 _urls = {
     "valid_tv": [
@@ -27,7 +18,26 @@ _urls = {
 }
 
 
-@pytest.mark.skipif(not __can_run_tests(), reason="Cannot contact BBC iPlayer")
+def __command_available() -> bool:
+    fetcher = BBCiPlayerFetcher()
+    try:
+        if not fetcher.ready:
+            return False
+    except FetcherMisconfiguredError:
+        return False
+    return True
+
+
+def __can_contact_iplayer() -> bool:
+    try:
+        httpx.get("https://www.bbc.co.uk/iplayer")
+    except (httpx.RequestError, httpx.ConnectError):
+        return False
+    return True
+
+
+@pytest.mark.skipif(not __can_contact_iplayer(), reason="Cannot contact BBC iPlayer")
+@pytest.mark.skipif(not __command_available(), reason="No BBC iPlayer")
 class TestBBCiPlayerFetcher:
     @pytest.fixture
     def fetcher_instance(self):
@@ -36,9 +46,6 @@ class TestBBCiPlayerFetcher:
     @pytest.mark.network
     @pytest.mark.parametrize("url", _urls["valid_tv"])
     def test_get_metadata_valid_tv(self, fetcher_instance, url):
-        if not fetcher_instance.ready:
-            pytest.skip("get_iplayer not available to run test")
-
         meta = fetcher_instance._get_metadata(url)
         assert meta is not None, "_get_metadata returned None"
         assert meta.format == "tv", (

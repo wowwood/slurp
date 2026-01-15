@@ -19,6 +19,7 @@ from slurp.fetchers import (
     fetchers_for_url,
 )
 from slurp.fetchers.cobalt import CobaltFetcher
+from slurp.fetchers.exceptions import FetcherMisconfiguredError
 from slurp.fetchers.get_iplayer import BBCiPlayerFetcher
 from slurp.fetchers.types import (
     FetcherMediaMetadataAvailable,
@@ -102,41 +103,66 @@ def download():
 
 
 def create_app(config_filename: str = "config.toml") -> Flask:
+    """Application factory."""
     app = Flask(__name__)
-    # app.config.from_prefixed_env(prefix='YDP')
-    config_loaded = app.config.from_file(
+
+    # Load configuration.
+    # First load the default config module, then any config file, then overload the environment.
+
+    from slurp import config
+
+    app.config.from_object("slurp.config.DefaultConfig")
+
+    conf_file_load = app.config.from_file(
         os.path.join(os.getcwd(), config_filename),
         load=tomllib.load,
         text=False,
         silent=True,
     )
-    if config_loaded:
-        app.logger.info("Configuration loaded successfully.")
-    else:
-        app.logger.warning("Failed to load configuration - using INSECURE defaults!")
-    app.config["OUTPUTS"] = app.config.get("OUTPUTS", "").split(os.pathsep)
+    if conf_file_load:
+        app.logger.info("Configuration loaded from file successfully.")
 
-    # Fill fetchers config with configured fetchers.
-    if app.config.get("FETCHER_YTDLP_ENABLED", True) is True:
-        app.logger.info("YTDLP fetcher enabled")
-        fetchers.append(YTDLPFetcher())
+    app.config.from_prefixed_env(prefix="SLURP")
 
-    if app.config.get("FETCHER_COBALT_ENABLED", False) is True:
-        app.logger.info("Cobalt fetcher enabled")
-        fetchers.append(
-            CobaltFetcher(
-                app.config.get("FETCHER_COBALT_URL", "http://localhost:9000"),
-                app.config.get("FETCHER_COBALT_KEY", None),
-            )
+    # Warn if the configuration has not been properly overloaded.
+    if app.config["SECRET_KEY"] == config.DefaultConfig.SECRET_KEY:
+        app.logger.warning(
+            "SECRET_KEY has not been set - THIS IS NOT SECURE! Are you providing valid configuration?"
         )
 
-    if app.config.get("FETCHER_BBC_IPLAYER_ENABLED", True) is True:
-        app.logger.info("get_iplayer fetcher enabled")
-        fetchers.append(BBCiPlayerFetcher())
+    if app.config["OUTPUTS"] is str:
+        # Normalise the OUTPUTS list to a list
+        app.config["OUTPUTS"] = app.config.get("OUTPUTS", "").split(os.pathsep)
+
+    # Fill fetchers config with configured fetchers.
+    if app.config.get("FETCHER_YTDLP_ENABLED") is True:
+        # This fetcher can't fail.
+        fetchers.append(YTDLPFetcher())
+
+    if app.config.get("FETCHER_COBALT_ENABLED") is True:
+        try:
+            fetchers.append(
+                CobaltFetcher(
+                    app.config.get("FETCHER_COBALT_URL", "http://localhost:9000"),
+                    app.config.get("FETCHER_COBALT_KEY", None),
+                )
+            )
+        except FetcherMisconfiguredError as e:
+            app.logger.error("Failed to initialize the Cobalt fetcher: %s", e)
+
+    if app.config.get("FETCHER_BBC_IPLAYER_ENABLED") is True:
+        try:
+            fetchers.append(BBCiPlayerFetcher())
+        except FetcherMisconfiguredError as e:
+            app.logger.error("Failed to initialize the get_iplayer fetcher: %s", e)
 
     if len(fetchers) == 0:
         # No fetchers configured - fatal error.
-        raise Exception("No fetchers enabled")
+        raise Exception("No fetchers enabled - please enable some!")
+
+    app.logger.info(
+        f"The following fetchers are enabled: [{', '.join([f.name for f in fetchers])}]"
+    )
 
     app.jinja_env.filters["duration"] = format_duration
 
