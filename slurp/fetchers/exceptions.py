@@ -1,3 +1,7 @@
+class FetcherMisconfiguredError(Exception):
+    pass
+
+
 class NoUpstreamMetadataError(Exception):
     pass
 
