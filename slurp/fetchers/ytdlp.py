@@ -170,7 +170,7 @@ class YTDLPFetcher(Fetcher):
 
         # We need to run the download on a thread so we can continue to execute our client response
         thread = threading.Thread(
-            target=self._get_media(q, url, fmt, directory, filename), daemon=True
+            target=self._get_media, args=(q, url, fmt, directory, filename), daemon=True
         )
         thread.start()
 
