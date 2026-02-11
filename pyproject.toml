@@ -17,6 +17,7 @@ dependencies = [
     "yt-dlp (>=2025.12.8,<2026.0.0)",
     "httpx (>=0.28.1,<0.29.0)",
     "gunicorn (>=23.0.0,<24.0.0)",
+    "pytest (>=9.0.2,<10.0.0)",
 ]
 
 [dependency-groups]
