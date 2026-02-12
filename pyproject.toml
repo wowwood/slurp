@@ -1,6 +1,6 @@
 [project]
 name = "slurp"
-version = "0.3.0"
+version = "0.3.1"
 description = "Online media ingest utility"
 authors = [
     { name = "embr", email = "git@liclac.eu" },
@@ -14,15 +14,16 @@ dependencies = [
     "watchdog (>=6.0.0,<7.0.0)",
     "python-dotenv (>=1.0.1,<2.0.0)",
     "flask-wtf (>=1.2.2,<2.0.0)",
-    "yt-dlp (>=2025.12.8,<2026.0.0)",
+    "yt-dlp (>=2026.2.0)",
     "httpx (>=0.28.1,<0.29.0)",
-    "gunicorn (>=23.0.0,<24.0.0)",
+    "gunicorn (>=25.0.0,<26.0.0)",
     "pytest (>=9.0.2,<10.0.0)",
+    "coverage (>=7.13.4,<8.0.0)",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest (==9.0.2)",
+    "pytest (>=9.0.2,<10.0.0)",
     "coverage (>=7.13.1,<8.0.0)",
     "ruff>=0.14.10",
 ]
