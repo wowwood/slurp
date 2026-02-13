@@ -139,10 +139,25 @@ def create_app(config_filename: str = "config.toml") -> Flask:
 
     # Fill fetchers config with configured fetchers.
     if app.config.get("FETCHER_YTDLP_ENABLED") is True:
-        try:
-            js_runtimes = ast.literal_eval(
-                app.config.get("FETCHER_YTDLP_JS_RUNTIMES", None)
+        # Scope js_runtimes correctly
+        js_runtimes: dict[str, dict[str, dict[str, str]]] | None = None
+        if app.config.get("FETCHER_YTDLP_JS_RUNTIMES") is not None:
+            # Only try to parse the runtimes configuration if it's been set in the first place
+            try:
+                js_runtimes = ast.literal_eval(
+                    app.config.get("FETCHER_YTDLP_JS_RUNTIMES", None)
+                )
+            except SyntaxError as e:
+                raise SyntaxError(
+                    f"Parsing FETCHER_YTDLP_JS_RUNTIMES failed: {e}"
+                ) from e
+        else:
+            app.logger.warning(
+                "The YTDLP fetcher does not have a Javascript runtime configured. "
+                "It will still function, but in a degraded state - please set one using the FETCHER_YTDLP_JS_RUNTIMES config flag. "
+                "If 'deno' is available on the system PATH, please ignore this warning."
             )
+        try:
             fetchers.append(
                 YTDLPFetcher(
                     js_runtimes=js_runtimes,
