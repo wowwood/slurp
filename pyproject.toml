@@ -19,6 +19,7 @@ dependencies = [
     "gunicorn (>=25.0.0,<26.0.0)",
     "pytest (>=9.0.2,<10.0.0)",
     "coverage (>=7.13.4,<8.0.0)",
+    "yt-dlp-ejs (==0.4.0)",
 ]
 
 [dependency-groups]

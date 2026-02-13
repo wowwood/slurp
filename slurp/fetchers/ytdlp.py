@@ -29,6 +29,11 @@ class YTDLPFetcher(Fetcher):
     service_names = ["Youtube"]
     service_urls = ["youtube.com", "youtu.be"]
 
+    js_runtimes: dict[str, dict[str, str]] | None = None
+
+    def __init__(self, js_runtimes: dict[str, dict[str, str]] | None = None):
+        self.js_runtimes = js_runtimes
+
     class _Queuelogger:
         """queueLogger provides a yt-dlp compatible logging interface that emits exclusively to a queue."""
 
@@ -117,14 +122,15 @@ class YTDLPFetcher(Fetcher):
         """
         opts = (
             {
+                "js_runtimes": self.js_runtimes,
                 "logger": self._Queuelogger(q),
                 "no_warnings": True,
+                # Note: This will break if you were to pass in multiple target URLs
+                "outtmpl": f"{filename}.%(ext)s",
                 "paths": {
                     "home": directory,
                     "temp": f"{directory}/temp",  # currently hard-coded - should we make this configurable?
                 },
-                # Note: This will break if you were to pass in multiple target URLs
-                "outtmpl": f"{filename}.%(ext)s",
             }
             | self._format_config(fmt)
         )
