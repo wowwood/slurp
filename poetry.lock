@@ -682,7 +682,19 @@ secretstorage = ["cffi", "secretstorage"]
 static-analysis = ["autopep8 (>=2.0,<3.0)", "ruff (>=0.14.0,<0.15.0)"]
 test = ["pytest (>=8.1,<9.0)", "pytest-rerunfailures (>=14.0,<15.0)"]
 
+[[package]]
+name = "yt-dlp-ejs"
+version = "0.4.0"
+description = "External JavaScript for yt-dlp supporting many runtimes"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    { file = "yt_dlp_ejs-0.4.0-py3-none-any.whl", hash = "sha256:19278cff397b243074df46342bb7616c404296aeaff01986b62b4e21823b0b9c" },
+    { file = "yt_dlp_ejs-0.4.0.tar.gz", hash = "sha256:3c67e0beb6f9f3603fbcb56f425eabaa37c52243d90d20ccbcce1dd941cfbd07" },
+]
+
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "53551beb1b8057e8186423b2f3f98db62ae1f5869c1aea532a2ca5d867683480"
+content-hash = "2e53c44a0e4e1d0ccc2b7cdf3d6e223ff95adbddeee59dfccf0d0b5a21b0d77b"

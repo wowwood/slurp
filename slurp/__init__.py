@@ -1,3 +1,4 @@
+import ast
 import os
 import tomllib
 from typing import Generator
@@ -138,8 +139,17 @@ def create_app(config_filename: str = "config.toml") -> Flask:
 
     # Fill fetchers config with configured fetchers.
     if app.config.get("FETCHER_YTDLP_ENABLED") is True:
-        # This fetcher can't fail.
-        fetchers.append(YTDLPFetcher())
+        try:
+            js_runtimes = ast.literal_eval(
+                app.config.get("FETCHER_YTDLP_JS_RUNTIMES", None)
+            )
+            fetchers.append(
+                YTDLPFetcher(
+                    js_runtimes=js_runtimes,
+                )
+            )
+        except FetcherMisconfiguredError as e:
+            app.logger.error("Failed to initialize the YTDLP fetcher: %s", e)
 
     if app.config.get("FETCHER_COBALT_ENABLED") is True:
         try:
