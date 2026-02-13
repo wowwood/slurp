@@ -51,7 +51,7 @@ ARG APP_GID=1000
 # Get main project dependencies, then add the get-iplayer repository and download
 # FIXME This is supremely sucky (get-iplayer has a stupidly long list of dependencies) and should be replaced with a manual build stage
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends curl libpq-dev gpg \
+  && apt-get install -y --no-install-recommends curl libpq-dev gpg nodejs \
   && echo 'deb http://download.opensuse.org/repositories/home:/m-grant-prg/Debian_13/ /' | tee /etc/apt/sources.list.d/home:m-grant-prg.list \
   && curl -fsSL https://download.opensuse.org/repositories/home:m-grant-prg/Debian_13/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/home_m-grant-prg.gpg > /dev/null \
   && apt-get update && apt-get install -y --no-install-recommends get-iplayer \
@@ -73,7 +73,8 @@ ENV FLASK_DEBUG="${FLASK_DEBUG}" \
     PYTHONUNBUFFERED=1 \
     PYTHONHASHSEED=random \
     PATH="${PATH}:/home/python/.local/bin" \
-    USER="python"
+    USER="python" \
+    SLURP_FETCHER_YTDLP_JS_RUNTIMES="{'node': {'path': '/usr/bin/node'}}"
 
 COPY --chown=python:python --from=app-build /home/python/.local /home/python/.local
 COPY --chown=python:python . .
