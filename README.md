@@ -42,6 +42,7 @@ ___
 For the YT-DLP fetcher:
 
 - ffmpeg
+- (optionally) a [compatible JavaScript runtime](https://github.com/yt-dlp/yt-dlp/wiki/EJS)
 
 > [!TIP]
 > If you have [Nix](https://nixos.org/) installed, you can simply run `nix-shell` in the project directory, to get a
@@ -82,8 +83,18 @@ The currently available fetchers are as follows:
 
 #### YT-DLP
 
-The YT-DLP fetcher reliably grabs media directly from Youtube (and Youtube alone) to your target.
-It does not require any extra setup.
+The YT-DLP fetcher reliably grabs media directly from YouTube (and YouTube alone) to your target.
+It does not _require_ any extra setup, but you'll receive a warning if a JavaScript runtime isn't available.
+
+The compatible runtimes are listed here: https://github.com/yt-dlp/yt-dlp/wiki/EJS
+
+If `deno` is available on the system path, it should be detected automatically. Otherwise, set the
+`FETCHER_YTDLP_JS_RUNTIMES` flag with the path to the runtime binary, like
+so:
+
+```toml
+FETCHER_YTDLP_JS_RUNTIMES = '{"node": {"path": "/usr/bin/node"}}'
+```
 
 ##### get_iplayer
 
