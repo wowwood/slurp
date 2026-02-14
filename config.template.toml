@@ -9,7 +9,7 @@ FETCHER_YTDLP_ENABLED = true
 # Set a JavaScript runtime for YTDLP to use. This is optional, but YTDLP will run degraded if you don't set this.
 # This should be set automatically if you're using the Container distribution of Slurp.
 # For example:
-# FETCHER_YTDLP_JS_RUNTIMES = {"deno": {"path": "/usr/bin/deno"}}
+# FETCHER_YTDLP_JS_RUNTIMES = '{"deno": {"path": "/usr/bin/deno"}}'
 
 # Enable the get_iplayer fetcher.
 # Note: get_iplayer must be installed separately (we just call the binary).
