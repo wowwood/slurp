@@ -108,11 +108,7 @@
     {% endblock %}
 </main>
 </body>
-<script type="text/javascript">
-    const resizeObserver = new ResizeObserver((_) => {
-        window.scrollTo(0, document.body.scrollHeight);
-    });
-    resizeObserver.observe(document.body);
-</script>
+
+{% block js-post %}{% endblock %}
 
 </html>
