@@ -20,3 +20,12 @@
         <input type="Submit" value="Done!">
     </form>
 {% endblock %}
+
+{% block js-post %}
+    <script type="text/javascript">
+        const resizeObserver = new ResizeObserver((_) => {
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+        resizeObserver.observe(document.body);
+    </script>
+{% endblock %}
