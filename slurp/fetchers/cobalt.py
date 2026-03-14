@@ -1,6 +1,5 @@
 import os
 import queue
-import shutil
 import threading
 from typing import Generator
 
