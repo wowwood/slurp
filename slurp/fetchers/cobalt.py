@@ -9,6 +9,7 @@ import httpx
 from slurp.fetchers.exceptions import FetcherMisconfiguredError
 from slurp.fetchers.types import (
     Fetcher,
+    FetcherMediaAvailable,
     FetcherMediaMetadataAvailable,
     FetcherProgressReport,
     FetcherUpdateEvent,
@@ -113,7 +114,7 @@ class CobaltFetcher(Fetcher):
         return cfg
 
     def _get_media(
-            self, q: queue.Queue, url: str, fmt: Format, directory: str, filename: str
+        self, q: queue.Queue, url: str, fmt: Format, directory: str, filename: str
     ):
         """
         Commence a download.
@@ -211,7 +212,7 @@ class CobaltFetcher(Fetcher):
         _, extension = os.path.splitext(response_data.get("filename"))
         # Open a temporary file
         try:
-            target = f"{directory}/temp/{filename}.tmp"
+            target = f"{directory}/{filename}{extension}"
             # make sure the temporary download directory exists
             os.makedirs(os.path.dirname(target), exist_ok=True)
             with open(target, mode="wb") as f:
@@ -251,30 +252,8 @@ class CobaltFetcher(Fetcher):
             q.shutdown()
             return
 
-        # Once writing is finished, move to final location
-        # Done using an OS move command so that the OS filesystem properly locks / unlocks the target
-        # (which means any processing up the pipe from us doesn't start trying to read the file prematurely)
-        q.put(
-            FetcherProgressReport(
-                typ="log",
-                level="info",
-                message=f"Moving file from temporary directory to {directory}/{filename}{extension}",
-            )
-        )
-
-        try:
-            shutil.move(target, f"{directory}/{filename}{extension}")
-        except Exception as e:
-            q.put(
-                FetcherProgressReport(
-                    typ="finish",
-                    level="error",
-                    status=1,
-                    message=f"exception occurred moving downloaded file: {e}",
-                )
-            )
-            q.shutdown()
-            return
+        # signals that media is now available for consumption
+        q.put(FetcherMediaAvailable(path=target))
 
         # signals end of stream
         q.put(
@@ -289,11 +268,11 @@ class CobaltFetcher(Fetcher):
         return
 
     def fetch(
-            self,
-            url: str,
-            fmt: Format,
-            directory: str,
-            filename: str,
+        self,
+        url: str,
+        fmt: Format,
+        directory: str,
+        filename: str,
     ) -> Generator[FetcherUpdateEvent]:
         """get_media downloads the media at the given params in the foreground, returning log information by means of a Generator."""
         q: queue.Queue[FetcherUpdateEvent] = queue.Queue()
@@ -319,4 +298,6 @@ class CobaltFetcher(Fetcher):
                         break
                     yield i
                 case FetcherMediaMetadataAvailable() as i:
+                    yield i
+                case FetcherMediaAvailable() as i:
                     yield i

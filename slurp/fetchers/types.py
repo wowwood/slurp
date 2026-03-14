@@ -49,6 +49,13 @@ class FetcherProgressReport(FetcherUpdateEvent):
 
 
 @dataclass()
+class FetcherMediaAvailable(FetcherUpdateEvent):
+    """FetcherMediaAvailable is a FetcherUpdateEvent which denotes that the media can now be consumed at the given path."""
+
+    path: str
+
+
+@dataclass()
 class FetcherMediaMetadataAvailable(FetcherUpdateEvent):
     """FetcherMediaMetadataAvailable is a FetcherUpdateEvent fired when the metadata of the given media is available."""
 
@@ -91,6 +98,8 @@ class Fetcher(ABC):
         """
         fetch fetches the media at the given URL, in the given format, and places it at the provided directory / filename.
         Updates are provided over the returned generator.
+        It is expected that the directory provided is a temporary directory that will be scrubbed after completion,
+        with the completed media moved to the final location.
 
         If early metadata for the given media is available, return a MediaMetadata object.
         Otherwise, return FetcherProgress objects.

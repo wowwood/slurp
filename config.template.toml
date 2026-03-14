@@ -4,6 +4,9 @@ SECRET_KEY = "5Fh/gM4PA1NuQlWKXCKtlkeb6iDj01TYz1OtlSJ7I5Y="
 # Possible output directories. Delimit with OS path separator (: on unix, ; on Windows)
 OUTPUTS = "/tmp/slurp"
 
+# Temporary scratch directory to write in-progress and unvalidated downloads to. Uses system default if not set.
+# OUTPUT_TEMP = "/tmp"
+
 # Enable the YTDLP fetcher.
 FETCHER_YTDLP_ENABLED = true
 # Set a JavaScript runtime for YTDLP to use. This is optional, but YTDLP will run degraded if you don't set this.

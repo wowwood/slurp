@@ -1,5 +1,6 @@
 import ast
 import os
+import tempfile
 import tomllib
 from typing import Generator
 
@@ -23,11 +24,13 @@ from slurp.fetchers.cobalt import CobaltFetcher
 from slurp.fetchers.exceptions import FetcherMisconfiguredError
 from slurp.fetchers.get_iplayer import BBCiPlayerFetcher
 from slurp.fetchers.types import (
+    FetcherMediaAvailable,
     FetcherMediaMetadataAvailable,
     FetcherProgressReport,
     Format,
 )
 from slurp.fetchers.ytdlp import YTDLPFetcher
+from slurp.finaliser import finalise
 from slurp.helpers import format_duration
 
 
@@ -60,29 +63,53 @@ def stream_fetch(url: str, format: Format, target: str, slug: str) -> Generator[
         yield "<article class='fetcher-outcome fetcher-progress-message-level-error'>☹️ Slurp failed - no fetchers can handle this request. Check URL?</article>"
         return
 
-    success: bool = False
-    for idx, fetcher in enumerate(fetchers):
-        yield f"<code class='fetcher-progress-message'>🛫 {'Trying Fetch again' if idx > 0 else 'Fetching'} with {fetcher.name}...</code>"
-        for event in fetcher.fetch(url, format, target, slug):
-            match event:
-                case FetcherMediaMetadataAvailable() as e:
-                    # Metadata for this fetch now available.
-                    yield render_template("elements/media.html", metadata=e.metadata)
-                case FetcherProgressReport() as e:
-                    yield render_template("elements/progress_report.html", event=e)
-                    if e.typ == "finish":
-                        if e.status == 0:
-                            # Success
-                            success = True
-                        else:
-                            yield f"<code><b>🛬 Fetcher failed! Reason: {e.message}</b></code>"
-        if success:
-            yield "<article class='fetcher-outcome fetcher-progress-message-level-success'>🥤 Media slurped</article>"
-            break
-    if not success:
-        yield "<article class='fetcher-outcome fetcher-progress-message-level-error'>☹️ Slurp failed - out of available fetchers.</article>"
+    # Work in a temporary directory that gets torn down at the completion of this slurp run
+    with tempfile.TemporaryDirectory(
+        dir=current_app.config.get("OUTPUT_TEMP", None)
+    ) as tmp_dir:
+        success: bool = False
+        media_path: str | None = None
+        for idx, fetcher in enumerate(fetchers):
+            yield f"<code class='fetcher-progress-message'>🛫 {'Trying Fetch again' if idx > 0 else 'Fetching'} with {fetcher.name}...</code>"
+            for event in fetcher.fetch(url, format, tmp_dir, slug):
+                match event:
+                    case FetcherMediaMetadataAvailable() as e:
+                        # Metadata for this fetch now available.
+                        yield render_template(
+                            "elements/media.html", metadata=e.metadata
+                        )
+                    case FetcherMediaAvailable() as e:
+                        media_path = e.path
+                    case FetcherProgressReport() as e:
+                        yield render_template("elements/progress_report.html", event=e)
+                        if e.typ == "finish":
+                            if e.status == 0:
+                                # Success
+                                success = True
+                            else:
+                                yield f"<code><b>🛬 Fetcher failed! Reason: {e.message}</b></code>"
 
-    return
+            if success:
+                yield "<article class='fetcher-outcome fetcher-progress-message-level-success'>✅ Media fetch successful</article>"
+                break
+        if not success:
+            yield "<article class='fetcher-outcome fetcher-progress-message-level-error'>☹️ Slurp failed - out of available fetchers.</article>"
+
+        # Run the finalisers.
+        yield "<article class='fetcher-outcome fetcher-progress-message-level-info'>🚚 Finalising slurp...</article>"
+        final_path: str | None = None
+        try:
+            for event in finalise(media_path, target):
+                match event:
+                    case FetcherProgressReport() as e:
+                        yield render_template("elements/progress_report.html", event=e)
+                    case FetcherMediaAvailable() as e:
+                        final_path = e.path
+        except Exception as e:
+            yield f"<article class='fetcher-outcome fetcher-progress-message-level-error'>💣 Failed to finalise media: {e}</article>"
+            return
+        yield f"<article class='fetcher-outcome fetcher-progress-message-level-success'>🥤 Media slurped to {final_path}</article>"
+        return
 
 
 @main_blueprint.post("/download")

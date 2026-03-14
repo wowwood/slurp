@@ -14,6 +14,7 @@ from slurp import FetcherMisconfiguredError
 from slurp.fetchers.exceptions import AmbiguousQueryError, NoUpstreamMetadataError
 from slurp.fetchers.types import (
     Fetcher,
+    FetcherMediaAvailable,
     FetcherMediaMetadataAvailable,
     FetcherProgressReport,
     FetcherUpdateEvent,
@@ -146,12 +147,12 @@ class BBCiPlayerFetcher(Fetcher):
         return data
 
     def _get_media(
-            self,
-            q: queue.Queue[FetcherUpdateEvent],
-            url: str,
-            fmt: Format,
-            directory: str,
-            filename: str,
+        self,
+        q: queue.Queue[FetcherUpdateEvent],
+        url: str,
+        fmt: Format,
+        directory: str,
+        filename: str,
     ):
         """
         Commence a download from BBC iPlayer.
@@ -208,15 +209,6 @@ class BBCiPlayerFetcher(Fetcher):
             destination = f"{directory}/{filename}{target_extension}"
 
             # Once writing is finished, move to final location
-            # Done using an OS move command so that the OS filesystem properly locks / unlocks the target
-            # (which means any processing up the pipe from us doesn't start trying to read the file prematurely)
-            q.put(
-                FetcherProgressReport(
-                    typ="log",
-                    level="info",
-                    message=f"Moving file from temporary directory to {destination}",
-                )
-            )
 
             try:
                 shutil.move(target, destination)
@@ -226,11 +218,14 @@ class BBCiPlayerFetcher(Fetcher):
                         typ="finish",
                         level="error",
                         status=1,
-                        message=f"exception occurred moving downloaded file: {e}",
+                        message=f"exception occurred manipulating downloaded file: {e}",
                     )
                 )
                 q.shutdown()
                 return
+
+            # signals that media is now available for consumption
+            q.put(FetcherMediaAvailable(path=target))
 
             q.put(
                 FetcherProgressReport(
@@ -254,11 +249,11 @@ class BBCiPlayerFetcher(Fetcher):
             q.shutdown()
 
     def fetch(
-            self,
-            url: str,
-            fmt: Format,
-            directory: str,
-            filename: str,
+        self,
+        url: str,
+        fmt: Format,
+        directory: str,
+        filename: str,
     ) -> Generator[FetcherUpdateEvent]:
         """get_media downloads the media at the given params in the foreground, returning log information by means of a Generator."""
         q: queue.Queue[FetcherUpdateEvent] = queue.Queue()
@@ -284,4 +279,6 @@ class BBCiPlayerFetcher(Fetcher):
                         break
                     yield i
                 case FetcherMediaMetadataAvailable() as i:
+                    yield i
+                case FetcherMediaAvailable() as i:
                     yield i
