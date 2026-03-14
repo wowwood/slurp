@@ -1,12 +1,14 @@
 import queue
 import threading
 from datetime import datetime, timezone
+from glob import glob
 from typing import Generator
 
 from yt_dlp import YoutubeDL
 
 from slurp.fetchers.types import (
     Fetcher,
+    FetcherMediaAvailable,
     FetcherMediaMetadataAvailable,
     FetcherProgressReport,
     FetcherUpdateEvent,
@@ -122,11 +124,10 @@ class YTDLPFetcher(Fetcher):
         """
         opts = (
             {
-                "js_runtimes": self.js_runtimes,
                 "logger": self._Queuelogger(q),
                 "no_warnings": True,
                 # Note: This will break if you were to pass in multiple target URLs
-                "outtmpl": f"{filename}.%(ext)s",
+                # "outtmpl": f"{filename}.%(ext)s",
                 "paths": {
                     "home": directory,
                     "temp": f"{directory}/temp",  # currently hard-coded - should we make this configurable?
@@ -134,6 +135,10 @@ class YTDLPFetcher(Fetcher):
             }
             | self._format_config(fmt)
         )
+
+        if self.js_runtimes is not None:
+            opts.update({"js_runtimes": self.js_runtimes})
+
         try:
             # We support early metadata - send that if it's available.
             metadata = self._get_metadata(url, fmt)
@@ -143,6 +148,11 @@ class YTDLPFetcher(Fetcher):
 
             with YoutubeDL(opts) as ydl:
                 code = ydl.download([url])
+                files = glob(f"{directory}/*.*")
+                assert len(files) == 1, (
+                    f"unexpected number of files in bagging area: {len(files)}"
+                )
+                q.put(FetcherMediaAvailable(path=files[0]))
                 q.put(
                     FetcherProgressReport(
                         typ="finish",
@@ -195,4 +205,6 @@ class YTDLPFetcher(Fetcher):
                         break
                     yield i
                 case FetcherMediaMetadataAvailable() as i:
+                    yield i
+                case FetcherMediaAvailable() as i:
                     yield i
