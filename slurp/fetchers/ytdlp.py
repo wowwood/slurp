@@ -126,8 +126,7 @@ class YTDLPFetcher(Fetcher):
             {
                 "logger": self._Queuelogger(q),
                 "no_warnings": True,
-                # Note: This will break if you were to pass in multiple target URLs
-                # "outtmpl": f"{filename}.%(ext)s",
+                "outtmpl": f"{directory}/{filename}.%(ext)s",
                 "paths": {
                     "home": directory,
                     "temp": f"{directory}/temp",  # currently hard-coded - should we make this configurable?
