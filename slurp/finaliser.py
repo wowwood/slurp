@@ -3,8 +3,11 @@ from typing import Generator
 
 from pymediainfo import MediaInfo
 
-from slurp import FetcherMediaAvailable, FetcherProgressReport
-from slurp.fetchers.types import FetcherUpdateEvent
+from slurp.fetchers.types import (
+    FetcherMediaAvailable,
+    FetcherProgressReport,
+    FetcherUpdateEvent,
+)
 
 _acceptable_frame_rates = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60]
 
