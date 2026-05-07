@@ -24,6 +24,7 @@ dependencies = [
     "flask-sqlalchemy (==3.1.1)",
     "pydantic (==2.13.4)",
     "sqlmodel (==0.0.38)",
+    "marshmallow-sqlalchemy (>=1.5.0,<2.0.0)",
 ]
 
 [dependency-groups]
