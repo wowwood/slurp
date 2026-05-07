@@ -4,6 +4,9 @@ SECRET_KEY = "5Fh/gM4PA1NuQlWKXCKtlkeb6iDj01TYz1OtlSJ7I5Y="
 # Possible output directories. Delimit with OS path separator (: on unix, ; on Windows)
 OUTPUTS = "/tmp/slurp"
 
+# Database storage location. Make sure this is writable.
+DB_LOCATION = "database.db"
+
 # Temporary scratch directory to write in-progress and unvalidated downloads to. Uses system default if not set.
 # OUTPUT_TEMP = "/tmp"
 

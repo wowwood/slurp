@@ -1,13 +1,13 @@
-from sqlmodel import SQLModel, create_engine
+from flask_sqlalchemy import SQLAlchemy
 
-from slurp.models.task import FetchTask
-
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
-
-engine = create_engine(sqlite_url)
+db = SQLAlchemy()
 
 
-def create_db_and_tables():
+def create_db_and_tables(app):
+    from slurp.models.task import FetchTask
+
+    db.init_app(app)
+
     # Scrappily make database tables - to be replaced with proper migrations Soon (tm)
-    SQLModel.metadata.create_all(engine)
+    with app.app_context():
+        db.create_all()

@@ -8,6 +8,9 @@ class DefaultConfig:
     # CSRF / Cookie signing key. Make this something random! See https://flask.palletsprojects.com/en/stable/config/#SECRET_KEY
     SECRET_KEY: str | None = None
 
+    # Database storage location. Make sure this is writable.
+    DB_LOCATION: str | None = "database.db"
+
     # Possible output directories. Strings will be split by the OS path separator (: on unix, ; on Windows)
     OUTPUTS: list | str | None = ["/tmp/slurp"]
 
