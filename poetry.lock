@@ -575,6 +575,34 @@ files = [
 ]
 
 [[package]]
+name = "marshmallow"
+version = "4.3.0"
+description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    { file = "marshmallow-4.3.0-py3-none-any.whl", hash = "sha256:46c4fe6984707e3cbd485dfebbf0a59874f58d695aad05c1668d15e8c6e13b46" },
+    { file = "marshmallow-4.3.0.tar.gz", hash = "sha256:fb43c53b3fe240b8f6af37223d6ef1636f927ad9bea8ab323afad95dff090880" },
+]
+
+[[package]]
+name = "marshmallow-sqlalchemy"
+version = "1.5.0"
+description = "SQLAlchemy integration with the marshmallow (de)serialization library"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    { file = "marshmallow_sqlalchemy-1.5.0-py3-none-any.whl", hash = "sha256:3865232672f3dd38c4d5e4e85fdedce76904200742c3594948a2d11d0af93258" },
+    { file = "marshmallow_sqlalchemy-1.5.0.tar.gz", hash = "sha256:e51192c204770645a2fab0d72f44f8789272eef75951f84b1608d6b4b0bfe0e6" },
+]
+
+[package.dependencies]
+marshmallow = ">=3.18.0"
+SQLAlchemy = ">=1.4.40,<3.0"
+
+[[package]]
 name = "packaging"
 version = "26.1"
 description = "Core utilities for Python packages"
@@ -1122,4 +1150,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "8b099ac8554afb001cc200941f75ba470073608f3759efeb187565343ba19735"
+content-hash = "cb470cb51cb08b8a53cb3c82c71c0c13314de179c6334674e1025c4db397d692"

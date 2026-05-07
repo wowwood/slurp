@@ -13,11 +13,11 @@ from flask import (
     stream_template,
 )
 from flask_wtf import FlaskForm
-from sqlmodel import Session
+from sqlmodel import Session, select
 from wtforms import SelectField, StringField, URLField
 from wtforms.validators import URL, AnyOf, DataRequired
 
-from slurp import db
+from slurp.api import api_blueprint
 from slurp.db import create_db_and_tables, engine
 from slurp.fetchers import (
     fetchers,
@@ -135,16 +135,15 @@ def fetch_work(task: FetchTask):
         session.add(task)
         session.commit()
 
-    yield stream_fetch(
-        url=task.url, format=task.format, target=task.target, slug=task.slug
-    )
+        yield stream_fetch(
+            url=task.url, format=task.format, target=task.target, slug=task.slug
+        )
 
-    with Session(engine) as session:
         task.status = FetchTask.TaskStatus.success
         session.add(task)
         session.commit()
 
-    return
+        return
 
 
 @main_blueprint.post("/download")
@@ -259,6 +258,8 @@ def create_app(config_filename: str = "config.toml") -> Flask:
     app.jinja_env.filters["duration"] = format_duration
 
     app.register_blueprint(main_blueprint)
+
+    app.register_blueprint(api_blueprint)
 
     return app
 

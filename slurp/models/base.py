@@ -4,8 +4,6 @@ from datetime import datetime, timezone
 from sqlalchemy import TIMESTAMP
 from sqlmodel import Field, SQLModel
 
-from slurp import db
-
 
 class BaseModel(SQLModel):
     """
