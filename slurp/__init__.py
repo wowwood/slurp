@@ -13,9 +13,12 @@ from flask import (
     stream_template,
 )
 from flask_wtf import FlaskForm
+from sqlmodel import Session
 from wtforms import SelectField, StringField, URLField
 from wtforms.validators import URL, AnyOf, DataRequired
 
+from slurp import db
+from slurp.db import create_db_and_tables, engine
 from slurp.fetchers import (
     fetchers,
     fetchers_for_url,
@@ -32,6 +35,7 @@ from slurp.fetchers.types import (
 from slurp.fetchers.ytdlp import YTDLPFetcher
 from slurp.finaliser import finalise
 from slurp.helpers import format_duration
+from slurp.models.task import FetchTask
 
 
 class DownloadForm(FlaskForm):
@@ -112,21 +116,52 @@ def stream_fetch(url: str, format: Format, target: str, slug: str) -> Generator[
         return
 
 
+def fetch_job_create(url: str, format: Format, target: str, slug: str) -> FetchTask:
+    task = FetchTask(url=url, format=format, target=target, slug=slug)
+    with Session(engine) as session:
+        session.add(task)
+        session.commit()
+
+    return task
+
+
+def fetch_work(task: FetchTask):
+    # This is the beginnings of what will be the task runner thread.
+    # Right now it just wraps the HTML generator in some database updates - but eventually
+    # this will simply take the task ID, pull it from DB, then trust those details
+    # to complete the fetch - putting assoc. events onto the event bus.
+    with Session(engine) as session:
+        task.status = FetchTask.TaskStatus.running
+        session.add(task)
+        session.commit()
+
+    yield stream_fetch(
+        url=task.url, format=task.format, target=task.target, slug=task.slug
+    )
+
+    with Session(engine) as session:
+        task.status = FetchTask.TaskStatus.success
+        session.add(task)
+        session.commit()
+
+    return
+
+
 @main_blueprint.post("/download")
 def download():
     form = DownloadForm()
     form.directory.choices = current_app.config["OUTPUTS"]
     if not form.validate_on_submit():
         return form.errors
-
+    task = fetch_job_create(
+        form.url.data,
+        Format[form.format.data],
+        form.directory.data,
+        form.slug.data,
+    )
     return stream_template(
         "download.html",
-        output=stream_fetch(
-            form.url.data,
-            Format[form.format.data],
-            form.directory.data,
-            form.slug.data,
-        ),
+        output=fetch_work(task),
     )
 
 
@@ -157,6 +192,9 @@ def create_app(config_filename: str = "config.toml") -> Flask:
         app.logger.warning(
             "SECRET_KEY has not been set - THIS IS NOT SECURE! Are you providing valid configuration?"
         )
+
+    # Initialise database.
+    create_db_and_tables()
 
     if isinstance(app.config["OUTPUTS"], str):
         app.logger.error(f"Outputs pre-split: {app.config['OUTPUTS']}")
