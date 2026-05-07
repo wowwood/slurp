@@ -56,8 +56,12 @@ main_blueprint = Blueprint("main", __name__, template_folder="templates")
 def index():
     form = DownloadForm(request.args)
     form.directory.choices = current_app.config["OUTPUTS"]
+    with Session(engine) as session:
+        allTasks = session.exec(select(FetchTask)).all()
 
-    return render_template("index.html", form=form, fetchers=fetchers)
+        return render_template(
+            "index.html", form=form, fetchers=fetchers, allTasks=allTasks
+        )
 
 
 def stream_fetch(url: str, format: Format, target: str, slug: str) -> Generator[str]:

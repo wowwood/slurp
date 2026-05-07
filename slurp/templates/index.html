@@ -1,41 +1,55 @@
 {% extends "_base.html" %}
 {% block main %}
-<h1>🥤 Slurp</h1>
-<h4>A Web Media Download and Ingest utility</h4>
+    <h1>🥤 Slurp</h1>
+    <h4>A Web Media Download and Ingest utility</h4>
 
-<form action="/download" method="POST">
-  {% macro render_field(field) %}
-    {{ field(**kwargs) }}
-    {% if field.errors %}
-    <small id="{{ field.id }}-errors">
-      {% for error in field.errors %}
-        {{ error }}
-      {% endfor %}
-    </small>
-    {% endif %}
-  {% endmacro %}
-
-  {{ render_field(form.url, placeholder="URL", aria_label="URL") }}
-  {{ render_field(form.slug, placeholder="Slug", aria_label="Slug") }}
-  {{ render_field(form.format, aria_label="Select an output format") }}
-  {{ render_field(form.directory, aria_label="Select an output directory") }}
-
-  {{ form.hidden_tag() }}
-  <input type="submit" value="🥤 Slurp Media">
-</form>
-<article>
-    <h6>The following fetchers are supported:</h6>
-    <ul>
-    {% for f in fetchers %}
-            <li>
-                <b>{{ f.name }}</b>:
-                <ul>
-                    {% for n in f.service_names %}
-                        <li>{{ n }}</li>
+    <form action="/download" method="POST">
+        {% macro render_field(field) %}
+            {{ field(**kwargs) }}
+            {% if field.errors %}
+                <small id="{{ field.id }}-errors">
+                    {% for error in field.errors %}
+                        {{ error }}
                     {% endfor %}
-                </ul>
-            </li>
-    {% endfor %}
-    </ul>
-</article>
+                </small>
+            {% endif %}
+        {% endmacro %}
+
+        {{ render_field(form.url, placeholder="URL", aria_label="URL") }}
+        {{ render_field(form.slug, placeholder="Slug", aria_label="Slug") }}
+        {{ render_field(form.format, aria_label="Select an output format") }}
+        {{ render_field(form.directory, aria_label="Select an output directory") }}
+
+        {{ form.hidden_tag() }}
+        <input type="submit" value="🥤 Slurp Media">
+    </form>
+    <article>
+        <h6>The following fetchers are supported:</h6>
+        <ul>
+            {% for f in fetchers %}
+                <li>
+                    <b>{{ f.name }}</b>:
+                    <ul>
+                        {% for n in f.service_names %}
+                            <li>{{ n }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    </article>
+    <article>
+        <h6>Previously Slurped:</h6>
+        <ul>
+            {% for task in allTasks %}
+                <li>
+                    <b>Task #{{ task.id }}</b>:
+                    <ul>
+                        <li><strong>{{ task.slug }}</strong> ({{ task.url }})</li>
+                        <li>{{ task.status.value }}</li>
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    </article>
 {% endblock %}
