@@ -109,6 +109,14 @@ def stream_fetch(url: str, format: Format, target: str, slug: str) -> Generator[
 
 
 def fetch_job_create(url: str, format: Format, target: str, slug: str) -> FetchTask:
+    """
+    Create a FetchTask.
+    :param url: The URL of the media to be fetched.
+    :param format: The desired format to grab the media in.
+    :param target: The target directory to create the media in.
+    :param slug: The desired filename for ingest.
+    :return: Committed FetchTask.
+    """
     task = FetchTask(url=url, format=format, target=target, slug=slug)
     db.session.add(task)
     db.session.commit()
@@ -117,6 +125,11 @@ def fetch_job_create(url: str, format: Format, target: str, slug: str) -> FetchT
 
 
 def fetch_work(task: FetchTask) -> Generator[str]:
+    """
+    Perform the work described in the given FetchTask.
+    :param task: FetchTask to be executed.
+    :return: Generator
+    """
     # This is the beginnings of what will be the task runner thread.
     # Right now it just wraps the HTML generator in some database updates - but eventually
     # this will simply take the task ID, pull it from DB, then trust those details
@@ -138,6 +151,10 @@ def fetch_work(task: FetchTask) -> Generator[str]:
 
 @main_blueprint.post("/download")
 def download():
+    """
+    Fetch, slug, and expose the media content described in the given form details.
+    :return: HTML streaming response.
+    """
     form = DownloadForm()
     form.directory.choices = current_app.config["OUTPUTS"]
     if not form.validate_on_submit():
