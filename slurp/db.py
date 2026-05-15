@@ -4,7 +4,7 @@ db = SQLAlchemy()
 
 
 def create_db_and_tables(app):
-    from slurp.models.task import FetchTask
+    # from slurp.models.task import FetchTask
 
     db.init_app(app)
 
