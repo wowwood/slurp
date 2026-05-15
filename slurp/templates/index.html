@@ -39,11 +39,11 @@
         </ul>
     </article>
     <article>
-        <h6>Previously Slurped:</h6>
+        <h6>Last 10 Slurps:</h6>
         <ul>
             {% for task in allTasks %}
                 <li>
-                    <b>Task #{{ task.id }}</b>:
+                    <b>Task #{{ task.id }} ({{ task.ts_created.strftime('%Y-%m-%d %H%:%M') }})</b>:
                     <ul>
                         <li><strong>{{ task.slug }}</strong> ({{ task.url }})</li>
                         <li>{{ task.status.value }}</li>
