@@ -116,7 +116,7 @@ def fetch_job_create(url: str, format: Format, target: str, slug: str) -> FetchT
     return task
 
 
-def fetch_work(task: FetchTask):
+def fetch_work(task: FetchTask) -> Generator[str]:
     # This is the beginnings of what will be the task runner thread.
     # Right now it just wraps the HTML generator in some database updates - but eventually
     # this will simply take the task ID, pull it from DB, then trust those details
@@ -124,17 +124,14 @@ def fetch_work(task: FetchTask):
     task.status = FetchTask.TaskStatus.running
     db.session.add(task)
     db.session.commit()
-
-    try:
-        yield stream_fetch(
-            url=task.url, format=task.format, target=task.target, slug=task.slug
-        )
-    finally:
-        # We don't yet support success / failure states with this setup, so just return the special "completed" state.
-        # This will improve dramatically with further work on #29
-        task.status = FetchTask.TaskStatus.completed
-        db.session.add(task)
-        db.session.commit()
+    yield from stream_fetch(
+        url=task.url, format=task.format, target=task.target, slug=task.slug
+    )
+    # We don't yet support success / failure states with this setup, so just return the special "completed" state.
+    # This will improve dramatically with further work on #29
+    task.status = FetchTask.TaskStatus.completed
+    db.session.add(task)
+    db.session.commit()
 
     return
 
