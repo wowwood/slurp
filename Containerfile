@@ -23,19 +23,16 @@ ENV PYTHONUNBUFFERED="true" \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     PIP_DEFAULT_TIMEOUT=100 \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_CACHE_DIR='/tmp/poetry_cache' \
-    POETRY_VERSION=2.2.1 \
-    PATH="${PATH}:/home/python/.local/bin" \
+    UV_NO_DEV=1 \
+    PATH="${PATH}:/app/.venv/bin" \
     USER="python"
 
-RUN curl -sSL https://install.python-poetry.org | python3 -
+COPY --from=ghcr.io/astral-sh/uv:0.11.14 /uv /bin/uv
 
-COPY --chown=python:python pyproject.toml poetry.toml poetry.lock ./
-COPY --chown=python:python bin/ ./bin
+COPY --chown=python:python pyproject.toml uv.lock ./
+COPY --chown=python:python . .
 
-RUN chmod 0755 bin/* && bin/install-deps
+RUN uv sync --no-dev --locked
 
 CMD ["bash"]
 
@@ -72,11 +69,11 @@ ENV FLASK_DEBUG="${FLASK_DEBUG}" \
     PYTHONFAULTHANDLER=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONHASHSEED=random \
-    PATH="${PATH}:/home/python/.local/bin" \
+    PATH="${PATH}:/app/.venv/bin" \
     USER="python" \
     SLURP_FETCHER_YTDLP_JS_RUNTIMES="{'node': {'path': '/usr/bin/node'}}"
 
-COPY --chown=python:python --from=app-build /home/python/.local /home/python/.local
+COPY --chown=python:python --from=app-build /app/.venv /app/.venv
 COPY --chown=python:python . .
 
 # Static file compilation step - not presently used.

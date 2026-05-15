@@ -12,6 +12,7 @@ on:
       - main
     tags:
       - 'v*'
+  pull_request:
 
 jobs:
   cri:
@@ -81,6 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: cri
+    if: ${{ github.event_name != 'pull_request' }}
 
     steps:
       - name: Login to Github Container Registry

@@ -4,11 +4,16 @@ version = "0.3.1"
 description = "Online media ingest utility"
 authors = [
     { name = "embr", email = "git@liclac.eu" },
-    { name = "duck.", email = "me@duck.moe" }
+    { name = "duck.", email = "me@duck.moe" },
 ]
-license = { text = "EUPL-1.2" }
-readme = "README.md"
 requires-python = ">=3.13"
+readme = "README.md"
+license = { text = "EUPL-1.2" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
 dependencies = [
     "flask (>=3.1.0,<4.0.0)",
     "watchdog (>=6.0.0,<7.0.0)",
@@ -28,6 +33,9 @@ dependencies = [
     "flask-restx (==1.3.2)",
 ]
 
+[project.scripts]
+serve = "slurp:serve"
+
 [dependency-groups]
 dev = [
     "pytest (>=9.0.2,<10.0.0)",
@@ -35,9 +43,10 @@ dev = [
     "ruff>=0.14.10",
 ]
 
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv.build-backend]
+module-name = "slurp"
+namespace = true
 
-[tool.poetry.scripts]
-serve = "slurp:serve"
+[build-system]
+requires = ["uv_build>=0.9.22,<0.12.0"]
+build-backend = "uv_build"
