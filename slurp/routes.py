@@ -45,7 +45,9 @@ main_blueprint = Blueprint("main", __name__, template_folder="templates")
 def index():
     form = DownloadForm(request.args)
     form.directory.choices = current_app.config["OUTPUTS"]
-    allTasks = db.session.execute(db.select(FetchTask)).scalars()
+    allTasks = db.session.execute(
+        db.select(FetchTask).order_by(FetchTask.id.desc()).limit(10)
+    ).scalars()
 
     return render_template(
         "index.html", form=form, fetchers=fetchers, allTasks=allTasks
