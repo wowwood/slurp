@@ -2,6 +2,7 @@ import ast
 import os
 import tomllib
 
+from celery import Celery, Task
 from flask import Flask
 
 from slurp.api import api_blueprint
@@ -15,6 +16,19 @@ from slurp.fetchers.get_iplayer import BBCiPlayerFetcher
 from slurp.fetchers.ytdlp import YTDLPFetcher
 from slurp.helpers import format_duration
 from slurp.routes import main_blueprint
+
+
+def __celery_init_app(app: Flask) -> Celery:
+    class FlaskTask(Task):
+        def __call__(self, *args: object, **kwargs: object) -> object:
+            with app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery_app = Celery(app.name, task_cls=FlaskTask)
+    celery_app.config_from_object(app.config["CELERY"])
+    celery_app.set_default()
+    app.extensions["celery"] = celery_app
+    return celery_app
 
 
 def create_app(config_filename: str = "config.toml") -> Flask:
@@ -45,8 +59,8 @@ def create_app(config_filename: str = "config.toml") -> Flask:
             "SECRET_KEY has not been set - THIS IS NOT SECURE! Are you providing valid configuration?"
         )
 
-    # Set appropriate SQLAlchemy connection URI.
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{app.config['DB_LOCATION']}"
+    # Bind Celery
+    __celery_init_app(app)
 
     # Initialise database.
     create_db_and_tables(app)

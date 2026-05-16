@@ -20,3 +20,6 @@ venv/
 
 # maaaAAAACCCC
 **/.DS_Store
+
+# Celery
+celerybeat-*

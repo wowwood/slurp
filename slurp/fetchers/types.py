@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
@@ -5,7 +6,7 @@ from enum import Enum
 from typing import Generator
 
 
-class Format(Enum):
+class Format(str, Enum):
     """A Format defines what format the target Media should be fetched in."""
 
     VIDEO_AUDIO = "Video+Audio"

@@ -1,0 +1,2 @@
+class FinaliserError(Exception):
+    pass
