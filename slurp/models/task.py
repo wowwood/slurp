@@ -1,12 +1,14 @@
 import enum
+from datetime import datetime
 
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from slurp.fetchers.types import Format
+from slurp.fetchers.types import Format, MediaMetadata
 from slurp.models.base import BaseModel
 
 
-class FetchTask(BaseModel):
+class Fetch(BaseModel):
     # URL is the fully qualified link to the media to be fetched.
     url: Mapped[str] = mapped_column(index=True)
     # Slug is the desired output media name.
@@ -40,4 +42,25 @@ class FetchTask(BaseModel):
         nullable=False,
     )
 
-    # TODO should there be a mutex here?
+    meta: Mapped["FetchMetadata"] = relationship(back_populates="fetch")
+
+    # The ID of the celery task.
+    worker_id: Mapped[str | None] = mapped_column(index=True)
+
+
+class FetchMetadata(BaseModel):
+    fetch_id: Mapped[int] = mapped_column(ForeignKey("fetch.id"))
+    fetch: Mapped[Fetch] = relationship(back_populates="meta")
+
+    name: Mapped[str | None] = mapped_column()
+
+    author: Mapped[str | None] = mapped_column()
+    author_url: Mapped[str | None] = mapped_column()
+
+    ts_upload: Mapped[datetime | None] = mapped_column()
+
+    duration: Mapped[str | None] = mapped_column()
+
+    format: Mapped[str | None] = mapped_column()
+
+    thumbnail_url: Mapped[str | None] = mapped_column()

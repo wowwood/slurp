@@ -1,3 +1,3 @@
-__all__ = ["FetchTask"]
+__all__ = ["Fetch", "FetchMetadata"]
 
-from .task import FetchTask
+from slurp.models.task import Fetch, FetchMetadata

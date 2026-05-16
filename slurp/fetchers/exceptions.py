@@ -8,3 +8,11 @@ class NoUpstreamMetadataError(Exception):
 
 class AmbiguousQueryError(Exception):
     pass
+
+
+class NoFetchersAvailable(Exception):
+    pass
+
+
+class FetchersExhaustedError(Exception):
+    pass

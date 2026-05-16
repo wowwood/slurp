@@ -24,7 +24,7 @@ from slurp.fetchers.types import (
     Format,
 )
 from slurp.finaliser import finalise
-from slurp.models.task import FetchTask
+from slurp.models.task import Fetch
 
 
 class DownloadForm(FlaskForm):
@@ -46,7 +46,7 @@ def index():
     form = DownloadForm(request.args)
     form.directory.choices = current_app.config["OUTPUTS"]
     allTasks = db.session.execute(
-        db.select(FetchTask).order_by(FetchTask.id.desc()).limit(10)
+        db.select(Fetch).order_by(Fetch.id.desc()).limit(10)
     ).scalars()
 
     return render_template(
@@ -110,7 +110,7 @@ def stream_fetch(url: str, format: Format, target: str, slug: str) -> Generator[
         return
 
 
-def fetch_job_create(url: str, format: Format, target: str, slug: str) -> FetchTask:
+def fetch_job_create(url: str, format: Format, target: str, slug: str) -> Fetch:
     """
     Create a FetchTask.
     :param url: The URL of the media to be fetched.
@@ -119,14 +119,14 @@ def fetch_job_create(url: str, format: Format, target: str, slug: str) -> FetchT
     :param slug: The desired filename for ingest.
     :return: Committed FetchTask.
     """
-    task = FetchTask(url=url, format=format, target=target, slug=slug)
+    task = Fetch(url=url, format=format, target=target, slug=slug)
     db.session.add(task)
     db.session.commit()
 
     return task
 
 
-def fetch_work(task: FetchTask) -> Generator[str]:
+def fetch_work(task: Fetch) -> Generator[str]:
     """
     Perform the work described in the given FetchTask.
     :param task: FetchTask to be executed.
@@ -136,7 +136,7 @@ def fetch_work(task: FetchTask) -> Generator[str]:
     # Right now it just wraps the HTML generator in some database updates - but eventually
     # this will simply take the task ID, pull it from DB, then trust those details
     # to complete the fetch - putting assoc. events onto the event bus.
-    task.status = FetchTask.TaskStatus.running
+    task.status = Fetch.TaskStatus.running
     db.session.add(task)
     db.session.commit()
     yield from stream_fetch(
@@ -144,7 +144,7 @@ def fetch_work(task: FetchTask) -> Generator[str]:
     )
     # We don't yet support success / failure states with this setup, so just return the special "completed" state.
     # This will improve dramatically with further work on #29
-    task.status = FetchTask.TaskStatus.completed
+    task.status = Fetch.TaskStatus.completed
     db.session.add(task)
     db.session.commit()
 
