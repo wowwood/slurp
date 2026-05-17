@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: ./Containerfile
+    image: slurp
+    command: /app/deploy/cri/bin/start-web
+    environment:
+      SLURP_REDIS_URL: "redis://redis:6379"
+    volumes:
+      - /tmp/slurp_data:/data
+      - ../../config.toml:/app/config.toml
+    ports:
+      - "5010:8000"
+    depends_on:
+      - redis
+
+  redis:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    build:
+      context: ../..
+      dockerfile: ./Containerfile
+    image: slurp
+    command: /app/deploy/cri/bin/start-celeryworker
+    environment:
+      SLURP_REDIS_URL: "redis://redis:6379"
+    volumes:
+      - /tmp/slurp_data:/data
+      - ../../config.toml:/app/config.toml
+    depends_on:
+      - redis
+
+  celery_beat:
+    build:
+      context: ../..
+      dockerfile: ./Containerfile
+    image: slurp
+    command: /app/deploy/cri/bin/start-celerybeat
+    environment:
+      SLURP_REDIS_URL: "redis://redis:6379"
+    volumes:
+      - /tmp/slurp_data:/data
+      - ../../config.toml:/app/config.toml
+    depends_on:
+      - redis
+
+  flower:
+    build:
+      context: ../..
+      dockerfile: ./Containerfile
+    image: slurp
+    command: /app/deploy/cri/bin/start-flower
+    environment:
+      SLURP_REDIS_URL: "redis://redis:6379"
+    volumes:
+      - /tmp/slurp_data:/data
+      - ../../config.toml:/app/config.toml
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis

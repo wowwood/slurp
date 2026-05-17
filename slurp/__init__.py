@@ -4,9 +4,11 @@ import tomllib
 
 from celery import Celery, Task
 from flask import Flask
+from redis_om import Migrator
 
+import slurp.models
 from slurp.api import api_blueprint
-from slurp.db import create_db_and_tables
+from slurp.db import bind_redis
 from slurp.fetchers import (
     fetchers,
 )
@@ -62,8 +64,8 @@ def create_app(config_filename: str = "config.toml") -> Flask:
     # Bind Celery
     __celery_init_app(app)
 
-    # Initialise database.
-    create_db_and_tables(app)
+    # Bind Redis
+    bind_redis(app)
 
     if isinstance(app.config["OUTPUTS"], str):
         app.logger.error(f"Outputs pre-split: {app.config['OUTPUTS']}")

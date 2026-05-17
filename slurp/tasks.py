@@ -2,10 +2,8 @@ import tempfile
 
 from celery import Task, shared_task
 from flask import current_app
-from sqlalchemy.exc import MultipleResultsFound, NoResultFound
 from werkzeug.exceptions import BadRequest
 
-from slurp.db import db
 from slurp.exceptions import FinaliserError
 from slurp.fetchers import fetchers_for_url
 from slurp.fetchers.exceptions import (
@@ -22,9 +20,7 @@ from slurp.finaliser import finalise
 from slurp.models import Fetch, FetchMetadata
 
 
-@shared_task(
-    bind=True, dont_autoretry_for=(NoResultFound, MultipleResultsFound, BadRequest)
-)
+@shared_task(bind=True, dont_autoretry_for=(BadRequest,))
 def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
     """
     Fetch the given media from the network.
@@ -50,13 +46,11 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
     )
     task.status = Fetch.TaskStatus.running
     task.worker_id = self.request.id
-    db.session.add(task)
-    db.session.commit()
+    task.save()
+    lock = task.lock()
+    lock.acquire(token=self.request.id)
 
     self.update_state(state=Fetch.TaskStatus.running.value)
-
-    db.session.add(task)
-    db.session.commit()
 
     # Perform the fetch.
     # yield from stream_fetch(
@@ -93,8 +87,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                                 thumbnail_url=e.metadata.thumbnail_url,
                             )
                             task.meta = db_meta
-                            db.session.add(task)
-                            db.session.commit()
+                            task.save()
                         case FetcherMediaAvailable() as e:
                             media_path = e.path
                         case FetcherProgressReport() as e:
@@ -132,13 +125,13 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
     except Exception as e:
         self.update_state(status=Fetch.TaskStatus.failed.value, reason=str(e))
         task.status = Fetch.TaskStatus.failed
-        db.session.add(task)
-        db.session.commit()
+        task.save()
+        lock.release()
         raise e
 
     self.update_state(status=Fetch.TaskStatus.success.value, path=final_path)
     task.status = Fetch.TaskStatus.success
-    db.session.add(task)
-    db.session.commit()
+    task.save()
+    lock.release()
 
     return final_path

@@ -2,13 +2,10 @@
 SECRET_KEY = "5Fh/gM4PA1NuQlWKXCKtlkeb6iDj01TYz1OtlSJ7I5Y="
 
 # Possible output directories. Delimit with OS path separator (: on unix, ; on Windows)
-OUTPUTS = "/tmp/slurp"
+OUTPUTS = "/data/ingest"
 
-# Database storage location. This should probably be 'sqlite:///[something]'.
-SQLALCHEMY_DATABASE_URI = "sqlite:///database.db"
-
-# Location to connect to the message queue at. The default presumes you have a RabbitMQ instance available at the default location.
-BROKER_URL = "amqp://localhost:5672"
+# URL to connect to your Redis instance at. THIS SHOULD HAVE PERSISTENCE CONFIGURED!
+REDIS_URL = "redis://localhost:6379/0"
 
 # Temporary scratch directory to write in-progress and unvalidated downloads to. Uses system default if not set.
 # OUTPUT_TEMP = "/tmp"

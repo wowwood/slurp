@@ -1,7 +1,6 @@
 from flask import current_app
 from flask_restx import Namespace, Resource, ValidationError, fields
 
-from slurp.db import db
 from slurp.fetchers.types import Format
 from slurp.models.task import Fetch
 from slurp.tasks import fetch
@@ -34,7 +33,7 @@ fetchMetadata = api.model(
 fetchTask = api.model(
     "FetchTask",
     {
-        "id": fields.Integer(description="ID of task"),
+        "id": fields.String(attribute="pk", description="ID of task"),
         "ts_created": fields.DateTime(description="Created time"),
         "ts_updated": fields.DateTime(description="Last updated time"),
         "url": fields.String(description="URL that task fetches"),
@@ -71,7 +70,7 @@ class TaskList(Resource):
     @api.doc("list_tasks")
     @api.marshal_list_with(fetchTask)
     def get(self):
-        fetches = db.session.execute(db.select(Fetch)).scalars().all()
+        fetches = Fetch.find().all()
         return fetches
 
     @api.doc("create_task")
@@ -112,5 +111,5 @@ class Work(Resource):
     @api.doc("get_task_by_worker")
     @api.marshal_with(fetchTask)
     def get(self, worker_id):
-        fetch = db.first_or_404(db.select(Fetch).filter_by(worker_id=worker_id))
+        fetch = Fetch.find(worker_id == worker_id).first()
         return fetch
