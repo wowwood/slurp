@@ -43,10 +43,12 @@
         <ul>
             {% for task in allTasks %}
                 <li>
-                    <b>Task #{{ task.id }} ({{ task.ts_created.strftime('%Y-%m-%d %H%:%M') }})</b>:
+                    <a href="{{ url_for('main.fetch_info', id=task.pk) }}"><b><kbd>{{ task.pk }}</kbd></b></a>
+                    ({{ task.ts_created.strftime('%Y-%m-%d %H%:%M') }}):
                     <ul>
                         <li><strong>{{ task.slug }}</strong> ({{ task.url }})</li>
                         <li>{{ task.status.value }}</li>
+                        <li><a href="{{ url_for('main.fetch_info', id=task.pk) }}">Fetch Details...</a></li>
                     </ul>
                 </li>
             {% endfor %}

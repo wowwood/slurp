@@ -3,6 +3,7 @@ from typing import Generator
 
 from flask import (
     Blueprint,
+    abort,
     current_app,
     render_template,
     request,
@@ -22,7 +23,7 @@ from slurp.fetchers.types import (
     Format,
 )
 from slurp.finaliser import finalise
-from slurp.models.task import Fetch
+from slurp.models.task import Fetch, FetchEvent
 
 
 class DownloadForm(FlaskForm):
@@ -43,11 +44,23 @@ main_blueprint = Blueprint("main", __name__, template_folder="templates")
 def index():
     form = DownloadForm(request.args)
     form.directory.choices = current_app.config["OUTPUTS"]
-    allTasks = Fetch.find().all()
+    allTasks = Fetch.find().sort_by("-ts_created").page(offset=0, limit=10)
 
     return render_template(
         "index.html", form=form, fetchers=fetchers, allTasks=allTasks
     )
+
+
+@main_blueprint.get("/fetch/<id>")
+def fetch_info(id: str):
+    form = DownloadForm(request.args)
+    form.directory.choices = current_app.config["OUTPUTS"]
+    task = Fetch.get(id)
+    if task is None:
+        return abort(404)
+    allLog = FetchEvent.find(FetchEvent.fetch_id == id).sort_by("ts_created").all()
+
+    return render_template("fetch.html", fetch=task, fetchLog=allLog)
 
 
 def stream_fetch(url: str, format: Format, target: str, slug: str) -> Generator[str]:

@@ -390,6 +390,20 @@ wheels = [
 ]
 
 [[package]]
+name = "flask-sse"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flask" },
+    { name = "redis" },
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/38/31/82586853cb1c0fcc2b8b533891606a779acc0da7d4cda5c8d7f2c2b05a29/Flask-SSE-1.0.0.tar.gz", hash = "sha256:4f84714c2549a45e4f17bfc5f68ee8a9f298b22740a6844404d1c74551f2090d", size = 16190, upload-time = "2021-01-10T18:01:46.269Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/71/83/f9fe86f554a153fdd300fb8027121d508a2177605bd158d967ddd7325948/Flask_SSE-1.0.0-py2.py3-none-any.whl", hash = "sha256:f86d7ecff0607333755c444130c395e7a133fb7ae6cf76fbd29b1da36d34776b", size = 4952, upload-time = "2021-01-10T18:01:44.985Z" },
+]
+
+[[package]]
 name = "flask-wtf"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1197,6 +1211,7 @@ dependencies = [
     { name = "flask" },
     { name = "flask-redis" },
     { name = "flask-restx" },
+    { name = "flask-sse" },
     { name = "flask-wtf" },
     { name = "flower" },
     { name = "gunicorn" },
@@ -1226,6 +1241,7 @@ requires-dist = [
     { name = "flask", specifier = ">=3.1.0,<4.0.0" },
     { name = "flask-redis", specifier = ">=0.4.0" },
     { name = "flask-restx", specifier = "==1.3.2" },
+    { name = "flask-sse", specifier = ">=1.0.0" },
     { name = "flask-wtf", specifier = ">=1.2.2,<2.0.0" },
     { name = "flower", specifier = "==2.0.1" },
     { name = "gunicorn", specifier = ">=25.0.0,<26.0.0" },

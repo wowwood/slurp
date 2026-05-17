@@ -53,3 +53,11 @@ class Fetch(BaseModel, index=True):
 
     def lock(self):
         return self.db().lock(name=self.pk)
+
+
+class FetchEvent(BaseModel, index=True):
+    fetch_id: str = Field(index=True)
+    typ: str
+    level: str
+    message: str
+    status: int = 0
