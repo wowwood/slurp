@@ -4,9 +4,8 @@ import tomllib
 
 from celery import Celery, Task
 from flask import Flask
-from redis_om import Migrator
+from flask_sse import sse
 
-import slurp.models
 from slurp.api import api_blueprint
 from slurp.db import bind_redis
 from slurp.fetchers import (
@@ -128,6 +127,8 @@ def create_app(config_filename: str = "config.toml") -> Flask:
     )
 
     app.jinja_env.filters["duration"] = format_duration
+
+    app.register_blueprint(sse, url_prefix="/api/v1/stream")
 
     app.register_blueprint(main_blueprint)
 

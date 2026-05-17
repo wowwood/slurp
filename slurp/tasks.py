@@ -2,6 +2,7 @@ import tempfile
 
 from celery import Task, shared_task
 from flask import current_app
+from flask_sse import sse
 from werkzeug.exceptions import BadRequest
 
 from slurp.exceptions import FinaliserError
@@ -18,6 +19,7 @@ from slurp.fetchers.types import (
 )
 from slurp.finaliser import finalise
 from slurp.models import Fetch, FetchMetadata
+from slurp.models.task import FetchEvent
 
 
 @shared_task(bind=True, dont_autoretry_for=(BadRequest,))
@@ -50,7 +52,29 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
     lock = task.lock()
     lock.acquire(token=self.request.id)
 
-    self.update_state(state=Fetch.TaskStatus.running.value)
+    def raiseFetchEvent(typ: str, level: str, message: str, status: int = 0):
+        db_log = FetchEvent(
+            fetch_id=task.pk,
+            typ=typ,
+            level=level,
+            message=message,
+            status=status,
+        )
+        db_log.save()
+        self.update_state(event=db_log.model_dump_json())
+        sse.publish(db_log.model_dump_json())
+
+    sse.publish(
+        {
+            "task_id": task.pk,
+            "url": task.url,
+            "format": format,
+            "target": target,
+            "slug": slug,
+        },
+        type="created_data",
+    )
+    raiseFetchEvent("created", "info", f"Running task {task.pk}")
 
     # Perform the fetch.
     # yield from stream_fetch(
@@ -72,6 +96,18 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                 self.update_state(
                     event=f"{'Trying Fetch again' if idx > 0 else 'Fetching'} with {fetcher.name}"
                 )
+                sse.publish(
+                    {
+                        "fetch_id": task.pk,
+                        "message": f"{'Trying Fetch again' if idx > 0 else 'Fetching'} with {fetcher.name}",
+                    },
+                    type="message",
+                )
+                raiseFetchEvent(
+                    "log",
+                    "info",
+                    f"{'Trying Fetch again' if idx > 0 else 'Fetching'} with {fetcher.name}",
+                )
                 for event in fetcher.fetch(task.url, task.format, tmp_dir, task.slug):
                     match event:
                         case FetcherMediaMetadataAvailable() as e:
@@ -88,17 +124,33 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                             )
                             task.meta = db_meta
                             task.save()
+                            sse.publish(
+                                {
+                                    "fetch_id": task.pk,
+                                    "meta": db_meta.model_dump_json(),
+                                },
+                                type="metadata",
+                            )
+                            raiseFetchEvent(
+                                "log",
+                                "info",
+                                "Metadata successfully fetched",
+                            )
                         case FetcherMediaAvailable() as e:
                             media_path = e.path
                         case FetcherProgressReport() as e:
                             self.update_state(event=e)
+                            raiseFetchEvent(e.typ, e.level, e.message, e.status)
+
                             if e.typ == "finish":
                                 if e.status == 0:
                                     # Success
                                     success = True
                                 else:
-                                    self.update_state(
-                                        event=f"Fetcher failed! Reason: {e.message}"
+                                    raiseFetchEvent(
+                                        "log",
+                                        "error",
+                                        f"Fetcher failed: {e.message}",
                                     )
                                     # yield f"<code><b>🛬 Fetcher failed! Reason: {e.message}</b></code>"
 
@@ -116,6 +168,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                     match event:
                         case FetcherProgressReport() as e:
                             self.update_state(event=e)
+                            raiseFetchEvent(e.typ, e.level, e.message, e.status)
                         case FetcherMediaAvailable() as e:
                             final_path = e.path
             except Exception as e:
@@ -127,11 +180,37 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
         task.status = Fetch.TaskStatus.failed
         task.save()
         lock.release()
+        sse.publish(
+            {
+                "fetch_id": task.pk,
+                "state": Fetch.TaskStatus.failed.value,
+                "message": str(e),
+            },
+            type="status",
+        )
+        raiseFetchEvent(
+            "log",
+            "error",
+            f"Fetch failed: {e}",
+        )
         raise e
 
     self.update_state(status=Fetch.TaskStatus.success.value, path=final_path)
     task.status = Fetch.TaskStatus.success
     task.save()
     lock.release()
+    sse.publish(
+        {
+            "fetch_id": task.pk,
+            "state": Fetch.TaskStatus.success.value,
+            "path": final_path,
+        },
+        type="status",
+    )
+    raiseFetchEvent(
+        "log",
+        "success",
+        f"Fetch succeeded: file saved to {final_path}",
+    )
 
     return final_path
