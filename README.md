@@ -9,11 +9,22 @@ ___
 
 Ready-to-use CRI builds are available in the Packages area of this repository.
 
-Example call:
+You will need to make sure you have _at least_ the following running:
 
+* Redis (with persistence!)
+* Web server (the default)
+* Celery worker (cmd: `/app/deploy/cri/bin/start-celeryworker`)
+* Celery Beat (cmd: `/app/deploy/cri/bin/start-celerybeat`)
+
+An example docker-compose manifest is available in `/app/deploy/cri` - tweak to your requirements.
+
+To call the individual container functions yourself, do something like the following:
 `[podman|docker] run -d --restart=always -v config.toml:/app/config.toml --name slurp wowwood/slurp`
 
 ### Directly (systemd / Gunicorn)
+
+> [!WARNING]
+> This is not a supported configuration.
 
 First, ensure that you have downloaded _slurp_ to a directory on your system (e.g `/usr/local/slurp`).
 

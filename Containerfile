@@ -56,7 +56,8 @@ RUN apt-get update \
   && apt-get clean \
   && groupadd -g "${APP_GID}" python \
   && useradd --create-home --no-log-init -u "${APP_UID}" -g "${APP_GID}" python \
-  && chown python:python -R /app
+  && mkdir /data \
+  && chown python:python -R /app /data
 
 USER python
 
@@ -80,8 +81,8 @@ COPY --chown=python:python . .
 #RUN if [ "${FLASK_DEBUG}" != "true" ]; then \
 #  ln -s /public /app/public && SECRET_KEY=dummy flask digest compile && rm -rf /app/public; fi
 
-ENTRYPOINT ["/app/deploy/cri/bin/entrypoint-web"]
+ENTRYPOINT ["/app/deploy/cri/bin/entrypoint"]
 
 EXPOSE 8000
 
-CMD ["gunicorn", "-c", "python:config.gunicorn", "slurp:create_app()"]
+CMD ["/app/deploy/cri/bin/start-web"]

@@ -8,15 +8,15 @@ class DefaultConfig:
     # CSRF / Cookie signing key. Make this something random! See https://flask.palletsprojects.com/en/stable/config/#SECRET_KEY
     SECRET_KEY: str | None = None
 
-    # Database storage location. This should probably be 'sqlite:///[something]'.
-    SQLALCHEMY_DATABASE_URI: str = "sqlite:////tmp/slurp/database.db"
-    # Storage location for the Celery result backend. This should probably be next door to your main database.
-    CELERY_SQLALCHEMY_DATABASE_URI: str = "sqlite:////tmp/slurp/celery.db"
-    # Location to connect to the message queue at. The default presumes you have a RabbitMQ instance available at the default location.
-    BROKER_URL: str = "amqp://localhost:5672"
+    # URL to connect to your Redis instance at. THIS SHOULD HAVE PERSISTENCE CONFIGURED!
+    REDIS_URL = "redis://localhost:6379/0"
+    # REDIS_OM_URL = "oh_no"
 
     # Possible output directories. Strings will be split by the OS path separator (: on unix, ; on Windows)
     OUTPUTS: list | str | None = ["/tmp/slurp"]
+
+    # Temporary storage directory.
+    OUTPUT_TEMP: str | None = "/tmp/slurp_tmp"
 
     # Enable the YTDLP fetcher.
     FETCHER_YTDLP_ENABLED: bool = True
@@ -37,6 +37,6 @@ class DefaultConfig:
 
     CELERY: dict = {
         # Message queue.
-        "broker_url": BROKER_URL,
-        "result_backend": f"db+{CELERY_SQLALCHEMY_DATABASE_URI}",
+        "broker_url": REDIS_URL,
+        "result_backend": REDIS_URL,
     }

@@ -1,13 +1,11 @@
-from flask_sqlalchemy import SQLAlchemy
+from flask_redis import FlaskRedis
+from redis_om import Migrator
 
-db = SQLAlchemy()
+redis = FlaskRedis()
 
 
-def create_db_and_tables(app):
-    # from slurp.models.task import Fetch
+def bind_redis(app):
+    redis.init_app(app)
 
-    db.init_app(app)
-
-    # Scrappily make database tables - FIXME to be replaced with proper migrations Soon (tm)
-    with app.app_context():
-        db.create_all()
+    # Migrate database.
+    Migrator().run()

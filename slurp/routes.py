@@ -6,13 +6,11 @@ from flask import (
     current_app,
     render_template,
     request,
-    stream_template,
 )
 from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField, URLField
 from wtforms.validators import URL, AnyOf, DataRequired
 
-from slurp.db import db
 from slurp.fetchers import (
     fetchers,
     fetchers_for_url,
@@ -45,9 +43,7 @@ main_blueprint = Blueprint("main", __name__, template_folder="templates")
 def index():
     form = DownloadForm(request.args)
     form.directory.choices = current_app.config["OUTPUTS"]
-    allTasks = db.session.execute(
-        db.select(Fetch).order_by(Fetch.id.desc()).limit(10)
-    ).scalars()
+    allTasks = Fetch.find().all()
 
     return render_template(
         "index.html", form=form, fetchers=fetchers, allTasks=allTasks
@@ -108,66 +104,3 @@ def stream_fetch(url: str, format: Format, target: str, slug: str) -> Generator[
             return
         yield f"<article class='fetcher-outcome fetcher-progress-message-level-success'>🥤 Media slurped to {final_path}</article>"
         return
-
-
-def fetch_job_create(url: str, format: Format, target: str, slug: str) -> Fetch:
-    """
-    Create a FetchTask.
-    :param url: The URL of the media to be fetched.
-    :param format: The desired format to grab the media in.
-    :param target: The target directory to create the media in.
-    :param slug: The desired filename for ingest.
-    :return: Committed FetchTask.
-    """
-    task = Fetch(url=url, format=format, target=target, slug=slug)
-    db.session.add(task)
-    db.session.commit()
-
-    return task
-
-
-def fetch_work(task: Fetch) -> Generator[str]:
-    """
-    Perform the work described in the given FetchTask.
-    :param task: FetchTask to be executed.
-    :return: Generator
-    """
-    # This is the beginnings of what will be the task runner thread.
-    # Right now it just wraps the HTML generator in some database updates - but eventually
-    # this will simply take the task ID, pull it from DB, then trust those details
-    # to complete the fetch - putting assoc. events onto the event bus.
-    task.status = Fetch.TaskStatus.running
-    db.session.add(task)
-    db.session.commit()
-    yield from stream_fetch(
-        url=task.url, format=task.format, target=task.target, slug=task.slug
-    )
-    # We don't yet support success / failure states with this setup, so just return the special "completed" state.
-    # This will improve dramatically with further work on #29
-    task.status = Fetch.TaskStatus.completed
-    db.session.add(task)
-    db.session.commit()
-
-    return
-
-
-@main_blueprint.post("/download")
-def download():
-    """
-    Fetch, slug, and expose the media content described in the given form details.
-    :return: HTML streaming response.
-    """
-    form = DownloadForm()
-    form.directory.choices = current_app.config["OUTPUTS"]
-    if not form.validate_on_submit():
-        return form.errors
-    task = fetch_job_create(
-        form.url.data,
-        Format[form.format.data],
-        form.directory.data,
-        form.slug.data,
-    )
-    return stream_template(
-        "download.html",
-        output=fetch_work(task),
-    )
