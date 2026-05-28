@@ -33,6 +33,13 @@ jobs:
           key: test-venv-${{ hashFiles('poetry.lock') }}
       - name: Install the project dependencies
         run: uv sync --locked --all-extras --dev
+
+      # Do we want to make tests not require redis in future?
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.8.1
+        with:
+          redis-version: "7.4"
+
       - name: Run tests
         run: uv run pytest -v
 
