@@ -12,6 +12,7 @@ Ready-to-use CRI builds are available in the Packages area of this repository.
 You will need to make sure you have _at least_ the following running:
 
 * Redis (with persistence!)
+    * Persistence is not mandatory, but you'll lose all history every time you restart the instance.
 * Web server (the default)
 * Celery worker (cmd: `/app/deploy/cri/bin/start-celeryworker`)
 * Celery Beat (cmd: `/app/deploy/cri/bin/start-celerybeat`)
@@ -25,10 +26,11 @@ To call the individual container functions yourself, do something like the follo
 
 > [!WARNING]
 > This is not a supported configuration.
+> You still need a Redis instance somewhere for the job queue.
 
 First, ensure that you have downloaded _slurp_ to a directory on your system (e.g `/usr/local/slurp`).
 
-Next, make sure all dependencies are available (see "Development" below), and that Poetry has configured a venv at
+Next, make sure all dependencies are available (see "Development" below), and that uv has configured a venv at
 `.venv`.
 Also ensure that a valid configuration file is available at `config.toml` (see [Configuration](#Configuration)).
 
@@ -48,7 +50,7 @@ ___
 
 - [Python 3](https://www.python.org/)
 - [Javascript runtime](https://github.com/yt-dlp/yt-dlp/wiki/EJS)
-- [Poetry](https://python-poetry.org/docs/cli/#script-project)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
 
 For the YT-DLP fetcher:
 
@@ -66,7 +68,7 @@ For the YT-DLP fetcher:
 ### Install Python dependencies:
 
 ```bash
-$ poetry install --no-root
+$ uv sync --locked --all-extras
 ```
 
 ### Run the development server:
@@ -75,10 +77,18 @@ $ poetry install --no-root
 > Do not expose the development server in production!
 
 ```bash
-$ poetry run flask --app slurp run --debug --host=0.0.0.0
+$ uv run flask --app slurp run --debug --host=0.0.0.0
 ```
 
 _The host flag exposes it on the local interface, not just on the machine itself_
+
+#### Run the Celery Worker
+
+You'll also need the job runner. To run that:
+
+```bash
+celery -A slurp.make_celery:celery worker
+```
 
 # Configuration
 
