@@ -3,7 +3,7 @@
     <h1>🥤 Slurp</h1>
     <h4>A Web Media Download and Ingest utility</h4>
 
-    <form id="requestFetch" action="/download" method="POST">
+    <form id="requestFetch" action="{{ url_for('api.task_list') }}" method="POST">
         {% macro render_field(field) %}
             {{ field(**kwargs) }}
             {% if field.errors %}
