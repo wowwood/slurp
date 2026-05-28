@@ -49,7 +49,7 @@ ARG APP_GID=1000
 # FIXME This is supremely sucky (get-iplayer has a stupidly long list of dependencies) and should be replaced with a manual build stage
 RUN apt-get update \
   && apt-get install -y --no-install-recommends curl libpq-dev gpg nodejs \
-  && echo 'deb http://download.opensuse.org/repositories/home:/m-grant-prg/Debian_13/ /' | tee /etc/apt/sources.list.d/home:m-grant-prg.list \
+  && echo 'deb https://download.opensuse.org/repositories/home:/m-grant-prg/Debian_13/ /' | tee /etc/apt/sources.list.d/home:m-grant-prg.list \
   && curl -fsSL https://download.opensuse.org/repositories/home:m-grant-prg/Debian_13/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/home_m-grant-prg.gpg > /dev/null \
   && apt-get update && apt-get install -y --no-install-recommends get-iplayer \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
