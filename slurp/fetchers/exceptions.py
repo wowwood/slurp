@@ -11,8 +11,10 @@ class AmbiguousQueryError(Exception):
 
 
 class NoFetchersAvailable(Exception):
-    pass
+    def __str__(self):
+        return "No configured fetchers are available"
 
 
 class FetchersExhaustedError(Exception):
-    pass
+    def __str__(self):
+        return "Available Fetchers exhausted"

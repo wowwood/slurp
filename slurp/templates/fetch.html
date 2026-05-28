@@ -13,7 +13,7 @@
 
     {% include "elements/media.html" %}
 
-    <section id="fetch-log" class="fetcher-progress-log">
+    <section id="fetcher-log" class="fetcher-progress-log">
         <h3>Fetch Log:</h3>
         {% for data in fetchLog %}
             <div class="fetcher-progress-message">
@@ -22,7 +22,11 @@
                         at {{ data.ts_created }}</div>
                 {% elif data.typ == "log" %}
                     <div class="fetcher-progress-message-level-{{ data.level }}">
-                        {{ data.message | safe }}
+                        {% if data.level == "error" %}
+                            ⚠️ {{ data.message | safe }}
+                        {% else %}
+                            → {{ data.message | safe }}
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>
@@ -39,49 +43,50 @@
     </script>
 {% endblock %}
 
-{#{% block script %}#}
-{#    <script>#}
-{#        var source = new EventSource("{{ url_for('sse.stream') }}");#}
-{#        const eventList = document.getElementById("fetcher-log");#}
-{#        source.addEventListener('created_data', function (event) {#}
-{#            var data = JSON.parse(event.data);#}
-{#            console.log("created", data);#}
-{#            const l = document.createElement("div")#}
-{#            l.classList = "fetcher-progress-message"#}
-{#            const li = document.createElement("div")#}
-{#            li.classList = "fetcher-progress-message-level-" + data.level#}
-{#            li.textContent = data#}
-{#            l.appendChild(li)#}
-{#            eventList.appendChild(l)#}
-{#        }, false);#}
-{#        source.addEventListener('message', function (event) {#}
-{#            var data = JSON.parse(event.data);#}
-{#            console.log("message", data);#}
-{#            const l = document.createElement("div")#}
-{#            l.classList = "fetcher-progress-message"#}
-{#            const li = document.createElement("div")#}
-{#            li.classList = "fetcher-progress-message-level-" + data.level#}
-{#            li.textContent = data.message#}
-{#            l.appendChild(li)#}
-{#            eventList.appendChild(l)#}
-{#        }, false);#}
-{#        source.addEventListener('status', function (event) {#}
-{#            var data = JSON.parse(event.data);#}
-{#            console.log("status", data);#}
-{#            const l = document.createElement("div")#}
-{#            l.classList = "fetcher-progress-message"#}
-{#            const li = document.createElement("div")#}
-{#            li.classList = "fetcher-progress-message-level-" + data.level#}
-{#            li.textContent = data.message#}
-{#            l.appendChild(li)#}
-{#            eventList.appendChild(l)#}
-{#        }, false);#}
-{#        source.onmessage = (event) => {#}
-{#            var data = JSON.parse(event.data);#}
-{#            console.log(data);#}
-{#        };#}
-{#        source.addEventListener('error', function (event) {#}
-{#            alert("Failed to connect to the Slurp backend.");#}
-{#        }, false);#}
-{#    </script>#}
-{#{% endblock %}#}
+{% block script %}
+    <script>
+        var source = new EventSource("{{ url_for('sse.stream') }}");
+        const eventList = document.getElementById("fetcher-log");
+        source.addEventListener('created_data', function (event) {
+            var data = JSON.parse(event.data);
+            console.log("created", data);
+            const l = document.createElement("div")
+            l.classList = "fetcher-progress-message"
+            const li = document.createElement("div")
+            li.classList = "fetcher-progress-message-level-" + data.level
+            li.textContent = data
+            l.appendChild(li)
+            eventList.appendChild(l)
+        }, false);
+        source.addEventListener('message', function (event) {
+            var data = JSON.parse(event.data);
+            console.log("message", data);
+            const l = document.createElement("div")
+            l.classList = "fetcher-progress-message"
+            const li = document.createElement("div")
+            li.classList = "fetcher-progress-message-level-" + data.level
+            const jewel = (data.level !== 'error') ? "→" : "⚠️";
+            li.textContent = jewel + " " + data.message
+            l.appendChild(li)
+            eventList.appendChild(l)
+        }, false);
+        source.addEventListener('status', function (event) {
+            var data = JSON.parse(event.data);
+            console.log("status", data);
+            const l = document.createElement("div")
+            l.classList = "fetcher-progress-message"
+            const li = document.createElement("div")
+            li.classList = "fetcher-progress-message-level-" + data.level
+            li.textContent = data.message
+            l.appendChild(li)
+            eventList.appendChild(l)
+        }, false);
+        source.onmessage = (event) => {
+            var data = JSON.parse(event.data);
+            console.log(data);
+        };
+        source.addEventListener('error', function (event) {
+            alert("Failed to connect to the Slurp backend.");
+        }, false);
+    </script>
+{% endblock %}
