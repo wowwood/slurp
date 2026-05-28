@@ -1,6 +1,3 @@
-import tempfile
-from typing import Generator
-
 from flask import (
     Blueprint,
     abort,
@@ -14,15 +11,10 @@ from wtforms.validators import URL, AnyOf, DataRequired
 
 from slurp.fetchers import (
     fetchers,
-    fetchers_for_url,
 )
 from slurp.fetchers.types import (
-    FetcherMediaAvailable,
-    FetcherMediaMetadataAvailable,
-    FetcherProgressReport,
     Format,
 )
-from slurp.finaliser import finalise
 from slurp.models.task import Fetch, FetchEvent
 
 
