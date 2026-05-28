@@ -140,7 +140,7 @@ class List(Resource):
             # return {"message": "Task created", "data": data.model_dump()}, 200
 
         except ValidationError as e:
-            return {"message": "Validation failed", "errors": e.errors()}, 400
+            return {"message": "Validation failed", "errors": e}, 400
 
 
 @api.route("/worker/<string:worker_id>")
