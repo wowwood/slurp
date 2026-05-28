@@ -3,7 +3,7 @@
     <h1>🥤 Slurp</h1>
     <h4>A Web Media Download and Ingest utility</h4>
 
-    <form action="/download" method="POST">
+    <form id="requestFetch" action="/download" method="POST">
         {% macro render_field(field) %}
             {{ field(**kwargs) }}
             {% if field.errors %}
@@ -18,10 +18,10 @@
         {{ render_field(form.url, placeholder="URL", aria_label="URL") }}
         {{ render_field(form.slug, placeholder="Slug", aria_label="Slug") }}
         {{ render_field(form.format, aria_label="Select an output format") }}
-        {{ render_field(form.directory, aria_label="Select an output directory") }}
+        {{ render_field(form.target, aria_label="Select a target output directory") }}
 
         {{ form.hidden_tag() }}
-        <input type="submit" value="🥤 Slurp Media">
+        <button type="submit">🥤 Slurp Media</button>
     </form>
     <article>
         <h6>The following fetchers are supported:</h6>
@@ -54,4 +54,40 @@
             {% endfor %}
         </ul>
     </article>
+{% endblock %}
+
+{% block script %}
+    <script>
+        const form = document.getElementById('requestFetch');
+        form.addEventListener('submit', (event) => {
+            // Catch the form submission, and inhibit the normal submission pipeline
+            event.preventDefault();
+            const formData = new FormData(form);
+            // If the form is already submitting, do nothing
+            if (form.hasAttribute('data-submitting')) return;
+            // Add the [data-submitting] attribute to stop multiple submissions
+            form.setAttribute('data-submitting', '');
+            fetch('{{ url_for('api.task_list') }}', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Code to handle the server response
+                    console.log('Sucessful request: ', data)
+                    // Clear form
+                    form.reset()
+                    alert("Fetch successfully requested.")
+                    window.location.reload()
+                })
+                .catch(error => {
+                    console.error('Request error:', error)
+                    alert("Issue requesting slurp: " + error)
+                }).finally(() => {
+                    form.removeAttribute('data-submitting')
+                }
+            )
+            ;
+        });
+    </script>
 {% endblock %}
