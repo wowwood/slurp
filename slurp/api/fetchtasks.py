@@ -1,5 +1,9 @@
-from flask import current_app
+from enum import Enum
+from typing import Annotated, Any, Type
+
+from flask import current_app, request
 from flask_restx import Namespace, Resource, ValidationError, fields
+from pydantic import BaseModel, BeforeValidator, Field, field_serializer
 
 from slurp.fetchers.types import Format
 from slurp.models.task import Fetch
@@ -65,8 +69,39 @@ createTask = api.model(
 )
 
 
+def accept_enum_name(enum: Type[Enum]) -> BeforeValidator:
+    """ "
+    Pydantic validator that validates against the name of the enum value, not the value itself.
+    See https://github.com/pydantic/pydantic/discussions/2980#discussioncomment-15042101
+    """
+
+    def validator(value: Any) -> Any:
+        if isinstance(value, str) and value in enum.__members__:
+            return enum[value]
+        else:
+            return value
+
+    return BeforeValidator(validator)
+
+
+class createTaskSchema(BaseModel):
+    url: str = Field(description="URL that should be fetched")
+    format: Annotated[Format | None, accept_enum_name(Format)] = Field(
+        description="Download format"
+    )
+
+    @field_serializer("format")
+    def serialize_format(self, format: Format) -> str:
+        return format.name
+
+    slug: str = Field(description="Slug to save fetch as")
+    target: str = Field(
+        description="Filesystem target identifier. This MUST be a valid destination as configured."
+    )
+
+
 @api.route("/")
-class TaskList(Resource):
+class List(Resource):
     @api.doc("list_tasks")
     @api.marshal_list_with(fetchTask)
     def get(self):
@@ -74,36 +109,38 @@ class TaskList(Resource):
         return fetches
 
     @api.doc("create_task")
-    @api.expect(createTask, validate=True)
     # @api.marshal_with(fetchTask)
     def post(self):
-        data = api.payload
+        try:
+            # Handle JSON
+            if request.is_json:
+                raw_data = request.get_json()
 
-        # Safety: Validate the destination is permitted
-        if data.get("target") not in current_app.config["OUTPUTS"]:
-            return {
-                "error": "This target is not valid. Please refer to Slurp's configuration."
-            }, 400
-        fmt_video = data.get("format_video", True)
-        fmt_audio = data.get("format_audio", True)
-        if not fmt_video and not fmt_audio:
-            raise ValidationError(
-                "Invalid format requested: you can't ask for nothing!"
+            # Handle form-data / x-www-form-urlencoded
+            else:
+                raw_data = request.form.to_dict()
+
+            # Validate with Pydantic
+            data = createTaskSchema(**raw_data)
+
+            # Safety: Validate the destination is permitted
+            if data.target not in current_app.config["OUTPUTS"]:
+                return {
+                    "error": "This target is not valid. Please refer to Slurp's configuration."
+                }, 400
+
+            # Request that the fetch be worked on by the task queue.
+            result = fetch.delay(
+                url=data.url,
+                format=data.format,
+                target=data.target,
+                slug=data.slug,
             )
-        fmt = Format.VIDEO_AUDIO
-        if not fmt_video:
-            fmt = Format.AUDIO_ONLY
-        if not fmt_audio:
-            fmt = Format.VIDEO_ONLY
+            return {"worker_id": result.id}, 201
+            # return {"message": "Task created", "data": data.model_dump()}, 200
 
-        # Request that the fetch be worked on by the task queue.
-        result = fetch.delay(
-            url=data.get("url"),
-            format=fmt,
-            target=data.get("target"),
-            slug=data.get("slug"),
-        )
-        return {"worker_id": result.id}, 201
+        except ValidationError as e:
+            return {"message": "Validation failed", "errors": e.errors()}, 400
 
 
 @api.route("/worker/<string:worker_id>")

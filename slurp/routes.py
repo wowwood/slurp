@@ -34,7 +34,7 @@ class DownloadForm(FlaskForm):
         choices=[(v.name, v.value) for v in Format],
         validators=[DataRequired(), AnyOf([v.name for v in Format])],
     )
-    directory = SelectField("directory", validators=[DataRequired()])
+    target = SelectField("target", validators=[DataRequired()])
 
 
 main_blueprint = Blueprint("main", __name__, template_folder="templates")
@@ -43,7 +43,7 @@ main_blueprint = Blueprint("main", __name__, template_folder="templates")
 @main_blueprint.get("/")
 def index():
     form = DownloadForm(request.args)
-    form.directory.choices = current_app.config["OUTPUTS"]
+    form.target.choices = current_app.config["OUTPUTS"]
     allTasks = Fetch.find().sort_by("-ts_created").page(offset=0, limit=10)
 
     return render_template(
@@ -54,7 +54,7 @@ def index():
 @main_blueprint.get("/fetch/<id>")
 def fetch_info(id: str):
     form = DownloadForm(request.args)
-    form.directory.choices = current_app.config["OUTPUTS"]
+    form.target.choices = current_app.config["OUTPUTS"]
     task = Fetch.get(id)
     if task is None:
         return abort(404)

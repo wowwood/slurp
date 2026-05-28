@@ -1,4 +1,5 @@
 {% block main %}
-    <code class="fetcher-progress-message"><b
-            class="fetcher-progress-message-level-{{ event.level }}">{{ event.level }}</b>: {{ event.message }}</code>
+    <code class="fetcher-progress-message">
+        <b class="fetcher-progress-message-level-{{ event.level }}">{{ event.level }}</b>: {{ event.message }}
+    </code>
 {% endblock %}
