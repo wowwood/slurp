@@ -25,7 +25,12 @@ def __celery_init_app(app: Flask) -> Celery:
             with app.app_context():
                 return self.run(*args, **kwargs)
 
-    celery_app = Celery(app.name, task_cls=FlaskTask)
+    celery_app = Celery(
+        app.name,
+        task_cls=FlaskTask,
+        broker=app.config["REDIS_URL"],
+        result_backend=app.config["REDIS_URL"],
+    )
     celery_app.config_from_object(app.config["CELERY"])
     celery_app.set_default()
     app.extensions["celery"] = celery_app
