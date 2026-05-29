@@ -15,10 +15,10 @@
             {% endif %}
         {% endmacro %}
 
-        {{ render_field(form.url, placeholder="URL", aria_label="URL") }}
-        {{ render_field(form.slug, placeholder="Slug", aria_label="Slug") }}
-        {{ render_field(form.format, aria_label="Select an output format") }}
-        {{ render_field(form.target, aria_label="Select a target output directory") }}
+        {{ render_field(form.url, placeholder="🌐 URL", aria_label="URL") }}
+        {{ render_field(form.slug, placeholder="🐌 Slug", aria_label="Slug") }}
+        {{ render_field(form.format, aria_label="✍️ Select an output format") }}
+        {{ render_field(form.target, aria_label="📁 Select a target output directory") }}
 
         {{ form.hidden_tag() }}
         <button type="submit">🥤 Slurp Media</button>
@@ -43,12 +43,14 @@
         <ul>
             {% for task in allTasks %}
                 <li>
-                    <a href="{{ url_for('main.fetch_info', id=task.pk) }}"><b><kbd>{{ task.pk }}</kbd></b></a>
-                    ({{ task.ts_created.strftime('%Y-%m-%d %H%:%M') }}):
+                    <a href="{{ url_for('main.fetch_info', id=task.pk) }}"><b><kbd>🐌{{ task.slug }}</kbd></b></a>
+                    <code title="Job ID: {{ task.pk }}">🥤{{ task.pk[-4:] }}</code>
+
                     <ul>
-                        <li><strong>{{ task.slug }}</strong> ({{ task.url }})</li>
-                        <li>{{ task.status.value }}</li>
-                        <li><a href="{{ url_for('main.fetch_info', id=task.pk) }}">Fetch Details...</a></li>
+                        <li>📆 Created {{ task.ts_created.strftime('%Y-%m-%d %H:%M') }}</li>
+                        <li>🌐 {{ task.url }}</li>
+                        <li>✈️ Task <b>{{ task.status.value }}</b></li>
+                        <li><a href="{{ url_for('main.fetch_info', id=task.pk) }}">👀 Fetch Details...</a></li>
                     </ul>
                 </li>
             {% endfor %}

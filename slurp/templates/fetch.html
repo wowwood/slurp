@@ -8,8 +8,9 @@
         });
         resizeObserver.observe(document.body);
     </script>
-    <h1>Fetch <kbd>{{ fetch.pk }}</kbd></h1>
-    <h2>Slug <kbd>{{ fetch.slug }}</kbd></h2>
+    <h1>Slug <kbd>🐌{{ fetch.slug }}</kbd></h1>
+    <h2>Job ID <code title="{{ fetch.pk }}">🥤{{ fetch.pk[-4:] }}</code></h2>
+    <h3>📆 Created {{ fetch.ts_created.strftime('%Y-%m-%d %H:%M') }}</h3>
 
     {% include "elements/media.html" %}
 
