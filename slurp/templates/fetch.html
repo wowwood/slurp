@@ -8,12 +8,19 @@
         });
         resizeObserver.observe(document.body);
     </script>
-    <h1>Slug <kbd>🐌{{ fetch.slug }}</kbd></h1>
+    <h1>Slug <kbd>🐌{{ fetch.slug }}</kbd> {{ fetch.status.value }}</h1>
     <h2>Job ID <code title="{{ fetch.pk }}">🥤{{ fetch.pk[-4:] }}</code></h2>
     <h3>📆 Created {{ fetch.ts_created.strftime('%Y-%m-%d %H:%M') }}</h3>
 
     {% include "elements/media.html" %}
 
+    {% if fetch.pruned %}
+        {% if fetch.purged %}
+            <span>This task has been <b>PURGED</b> - output data and logs are not available.</span>
+        {% else %}
+            <span>This task has been <b>PRUNED</b> - output data has been destroyed.</span>
+        {% endif %}
+    {% endif %}
     <section id="fetcher-log" class="fetcher-progress-log">
         <h3>Fetch Log:</h3>
         {% for data in fetchLog %}
@@ -29,7 +36,12 @@
                             → {{ data.message | safe }}
                         {% endif %}
                     </div>
+                {% elif data.typ == "purge" %}
+                    <div class="fetcher-progress-message-level-error">{{ data.message | safe }}</div>
+                {% else %}
+                    <div class="fetcher-progress-message-level-info">{{ data.message | safe }}</div>
                 {% endif %}
+
             </div>
         {% endfor %}
     </section>

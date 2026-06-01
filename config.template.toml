@@ -10,6 +10,14 @@ REDIS_URL = "redis://localhost:6379/0"
 # Temporary scratch directory to write in-progress and unvalidated downloads to. Uses system default if not set.
 # OUTPUT_TEMP = "/tmp"
 
+# Purger settings - The purger has two levels, PURGE and PRUNE.
+## Purged events have their output file removed from the filesystem.
+## Purge after this many hours:
+PURGE_AFTER = 24
+## Pruned events have their logs expunged.
+## Prune after this many hours:
+PRUNE_AFTER = 168
+
 # Enable the YTDLP fetcher.
 FETCHER_YTDLP_ENABLED = true
 # Set a JavaScript runtime for YTDLP to use. This is optional, but YTDLP will run degraded if you don't set this.

@@ -36,7 +36,7 @@ main_blueprint = Blueprint("main", __name__, template_folder="templates")
 def index():
     form = DownloadForm(request.args)
     form.target.choices = current_app.config["OUTPUTS"]
-    allTasks = Fetch.find().sort_by("-ts_updated").page(offset=0, limit=10)
+    allTasks = Fetch.find().sort_by("-ts_created").page(offset=0, limit=10)
 
     return render_template(
         "index.html", form=form, fetchers=fetchers, allTasks=allTasks

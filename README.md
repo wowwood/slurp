@@ -180,3 +180,7 @@ Then simply configure _Slurp_ to use the API key for authentication:
 ```toml
 FETCHER_COBALT_KEY = "random-uuidv4-goes-here"
 ```
+
+## Technical Details
+
+The app stores times in `UTC` - remember to convert to local timezones where required (or don't, I'm not your mom)

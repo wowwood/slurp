@@ -1,6 +1,10 @@
+import datetime
+import pathlib
 import tempfile
 
-from celery import Task, shared_task
+from celery import Celery, Task, shared_task
+from celery.exceptions import InvalidTaskError
+from celery.schedules import crontab
 from flask import current_app
 from flask_sse import sse
 from werkzeug.exceptions import BadRequest
@@ -46,6 +50,8 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
         target=target,
         slug=slug,
     )
+    # This assertion is mainly here to clear some IDE warnings.
+    assert task.target is not None, "task target must be set"
     task.status = Fetch.TaskStatus.running
     task.worker_id = self.request.id
     task.save()
@@ -53,18 +59,6 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
     lock = task.lock()
     try:
         lock.acquire(token=self.request.id)
-
-        def raiseFetchEvent(typ: str, level: str, message: str, status: int = 0):
-            db_log = FetchEvent(
-                fetch_id=task.pk,
-                typ=typ,
-                level=level,
-                message=message,
-                status=status,
-            )
-            db_log.save()
-            self.update_state(event=db_log.model_dump_json())
-            sse.publish(db_log.model_dump_json())
 
         sse.publish(
             {
@@ -76,7 +70,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
             },
             type="created_data",
         )
-        raiseFetchEvent("created", "info", f"Running task {task.pk}")
+        task.emit_event("created", "info", f"Running task {task.pk}")
 
         # Perform the fetch.
         # yield from stream_fetch(
@@ -105,7 +99,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                         },
                         type="message",
                     )
-                    raiseFetchEvent(
+                    task.emit_event(
                         "log",
                         "info",
                         f"{'Trying Fetch again' if idx > 0 else 'Fetching'} with {fetcher.name}",
@@ -135,7 +129,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                                     },
                                     type="metadata",
                                 )
-                                raiseFetchEvent(
+                                task.emit_event(
                                     "log",
                                     "info",
                                     "Metadata successfully fetched",
@@ -144,14 +138,14 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                                 media_path = e.path
                             case FetcherProgressReport() as e:
                                 self.update_state(event=e)
-                                raiseFetchEvent(e.typ, e.level, e.message, e.status)
+                                task.emit_event(e.typ, e.level, e.message, e.status)
 
                                 if e.typ == "finish":
                                     if e.status == 0:
                                         # Success
                                         success = True
                                     else:
-                                        raiseFetchEvent(
+                                        task.emit_event(
                                             "log",
                                             "error",
                                             f"Fetcher failed: {e.message}",
@@ -164,6 +158,10 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                     # yield "<article class='fetcher-outcome fetcher-progress-message-level-error'>☹️ Slurp failed - out of available fetchers.</article>"
                     raise FetchersExhaustedError
 
+                assert media_path is not None, (
+                    "fetcher reported success yet media_path is None"
+                )
+
                 # Run the finaliser.
                 self.update_state(event="Finalising...")
                 final_path: str | None = None
@@ -172,7 +170,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                         match event:
                             case FetcherProgressReport() as e:
                                 self.update_state(event=e)
-                                raiseFetchEvent(e.typ, e.level, e.message, e.status)
+                                task.emit_event(e.typ, e.level, e.message, e.status)
                             case FetcherMediaAvailable() as e:
                                 final_path = e.path
                 except Exception as e:
@@ -191,15 +189,17 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                 },
                 type="status",
             )
-            raiseFetchEvent(
+            task.emit_event(
                 "log",
                 "error",
                 f"Fetch failed: {e}",
             )
             raise e
 
+        assert final_path is not None, "final_path not properly set by fetcher routine"
         self.update_state(status=Fetch.TaskStatus.success.value, path=final_path)
-        task.status = Fetch.TaskStatus.success
+        task.status = Fetch.TaskStatus.success.value
+        task.output_path = final_path
         task.save()
         sse.publish(
             {
@@ -209,7 +209,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
             },
             type="status",
         )
-        raiseFetchEvent(
+        task.emit_event(
             "log",
             "success",
             f"Fetch succeeded: file saved to {final_path}",
@@ -219,3 +219,87 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
     finally:
         # Always release the lock to avoid a deadlock.
         lock.release()
+
+
+@shared_task(bind=True, ignore_result=False)
+def cleanup_stale_tasks(self):
+    """
+    cleanup_stale_tasks removes persistent data about tasks that exceed the configured TASK_STALE duration.
+    :param self:
+    :return:
+    """
+    # Get the timestamp of the desired cutoffs.
+    # TODO configurable
+    # The PRUNE cutoff simply destroys the output data blob.
+    prune_cutoff = datetime.datetime.now(datetime.UTC) - datetime.timedelta(
+        hours=current_app.config.get("PRUNE_AFTER")
+    )
+    # The PURGE cutoff destroys all event data, leaving only the metadata.
+    purge_cutoff = datetime.datetime.now(datetime.UTC) - datetime.timedelta(
+        hours=current_app.config.get("PURGE_AFTER")
+    )
+
+    # Find all tasks that are OLDER than the cutoff, and that have not been purged.
+    # Purged is done as a negative to catch models without the key set
+    prune_targets = Fetch.find(
+        (Fetch.ts_created <= prune_cutoff) & ~(Fetch.purged == True),  # noqa: E712
+    ).all()
+    for task in prune_targets:
+        # Enqueue cleanup
+        # Could do this shorthand however it's (IMO) easier to read this way
+        if task.ts_created < purge_cutoff:
+            # PURGE the task.
+            cleanup_task.delay(task.pk, events=True)
+        else:
+            # PRUNE the task.
+            cleanup_task.delay(task.pk, events=False)
+    ids = [t.pk for t in prune_targets]
+    return ids
+
+
+@shared_task(bind=True)
+def cleanup_task(self, task_pk: str, events: bool = False):
+    """
+    cleanup_task removes data about the given task from the database, and attempts to remove any files related to the fetch.
+    :param self:
+    :param task_pk: ID of the task.
+    :param events: Destroy all logs and events relating to this task. This is a PURGE.
+    :return:
+    """
+    task = Fetch.find(Fetch.pk == task_pk).first()
+    if not task:
+        raise InvalidTaskError(f"Task {task_pk} does not exist on database")
+
+    # Destroy any events relating to the task if requested
+    if events:
+        FetchEvent.find(FetchEvent.fetch_id == task_pk).delete()
+        task.purged = True
+
+    # Destroy the resultant file in the filesystem, if it's there
+    if task.output_path is not None:
+        fs_target = pathlib.Path(task.output_path)
+        if fs_target.is_file():
+            fs_target.unlink()
+        else:
+            print("Failed to destroy output - does not exist, or is not a file")
+    # Mark the task as pruned
+    task.pruned = True
+    task.save()
+
+    # Raise SSE event / add to the log that the prune occurred
+    task.emit_event(
+        ("purge" if events else "prune"),
+        "info",
+        f"Task was {'purged' if events else 'pruned'}",
+        0,
+    )
+    return
+
+
+def _init_periodic_tasks(sender: Celery, **kwargs):
+    # Clean up stale tasks every hour.
+    sender.add_periodic_task(
+        # Run hourly, on the hour.
+        crontab(minute=0),
+        cleanup_stale_tasks.s(),
+    )
