@@ -13,6 +13,10 @@ class BaseModel(JsonModel):
     ts_created: datetime = Field(sortable=True, default=datetime.now(timezone.utc))
     ts_updated: datetime = Field(sortable=True, default=datetime.now(timezone.utc))
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ts_created = datetime.now(timezone.utc)
+
     def save(self, **kwargs):
         self.ts_updated = datetime.now(timezone.utc)
         super().save(**kwargs)
