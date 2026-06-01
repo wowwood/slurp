@@ -18,6 +18,14 @@ class DefaultConfig:
     # Temporary storage directory.
     OUTPUT_TEMP: str | None = "/tmp/slurp_tmp"
 
+    # Purger settings - The purger has two levels, PURGE and PRUNE.
+    ## Purged events have their output file removed from the filesystem.
+    ## Purge after this many hours:
+    PURGE_AFTER: int = 24  # 1 day
+    ## Pruned events have their logs expunged.
+    ## Prune after this many hours:
+    PRUNE_AFTER: int = 168  # 7 days
+
     # Enable the YTDLP fetcher.
     FETCHER_YTDLP_ENABLED: bool = True
 
@@ -39,4 +47,5 @@ class DefaultConfig:
         # Message queue.
         "broker_url": REDIS_URL,
         "result_backend": REDIS_URL,
+        "task_ignore_result": True,
     }

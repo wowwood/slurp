@@ -1,6 +1,7 @@
 import datetime
 import enum
 
+from flask_sse import sse
 from redis_om import Field
 
 from slurp.fetchers.types import Format
@@ -51,8 +52,29 @@ class Fetch(BaseModel, index=True):
     # The ID of the celery task.
     worker_id: str | None = Field(index=True, default=None)
 
+    # The path to the output file - only set if the fetch succeeded.
+    # If pruned is set, this path most likely does not exist, and is for information only.
+    output_path: str | None = None
+
+    # Whether this fetch has had its output data removed from the filesystem.
+    pruned: bool = Field(index=True, default=False)
+
+    # Whether this fetch has had its logs and events destroyed.
+    purged: bool = Field(index=True, default=False)
+
     def lock(self):
         return self.db().lock(name=self.pk)
+
+    def emit_event(self, typ: str, level: str, message: str, status: int = 0):
+        db_log = FetchEvent(
+            fetch_id=self.pk,
+            typ=typ,
+            level=level,
+            message=message,
+            status=status,
+        )
+        db_log.save()
+        sse.publish(db_log.model_dump_json())
 
 
 class FetchEvent(BaseModel, index=True):

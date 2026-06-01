@@ -17,6 +17,7 @@ from slurp.fetchers.get_iplayer import BBCiPlayerFetcher
 from slurp.fetchers.ytdlp import YTDLPFetcher
 from slurp.helpers import format_duration
 from slurp.routes import main_blueprint
+from slurp.tasks import _init_periodic_tasks
 
 
 def __celery_init_app(app: Flask) -> Celery:
@@ -34,6 +35,9 @@ def __celery_init_app(app: Flask) -> Celery:
     celery_app.config_from_object(app.config["CELERY"])
     celery_app.set_default()
     app.extensions["celery"] = celery_app
+
+    # Bind periodic tasks
+    celery_app.on_after_configure.connect(_init_periodic_tasks)
     return celery_app
 
 

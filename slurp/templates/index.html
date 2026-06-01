@@ -45,16 +45,27 @@
                 <li>
                     <a href="{{ url_for('main.fetch_info', id=task.pk) }}"><b><kbd>🐌{{ task.slug }}</kbd></b></a>
                     <code title="Job ID: {{ task.pk }}">🥤{{ task.pk[-4:] }}</code>
-
+                    <a href="{{ url_for('main.fetch_info', id=task.pk) }}">👀 Details...</a>
                     <ul>
-                        <li>📆 Created {{ task.ts_created.strftime('%Y-%m-%d %H:%M') }}</li>
-                        <li>🌐 {{ task.url }}</li>
-                        <li>✈️ Task <b>{{ task.status.value }}</b></li>
-                        <li><a href="{{ url_for('main.fetch_info', id=task.pk) }}">👀 Fetch Details...</a></li>
+                        {% if task.purged %}
+                            <li>
+                                <i>🪓 {{ task.status.value }} task <b>PURGED</b> due to age</i>
+                            </li>
+                        {% else %}
+                            {% if task.pruned %}
+                                <li>✂️ <b>PRUNED</b> (output file removed)</li>
+                            {% endif %}
+                            <li>📆 Created {{ task.ts_created.strftime('%Y-%m-%d %H:%M') }}</li>
+                            <li>🌐 {{ task.url }}</li>
+                            <li>✈️ Task <b>{{ task.status.value }}</b></li>
+                        {% endif %}
                     </ul>
                 </li>
             {% endfor %}
         </ul>
+    </article>
+    <article style="text-align: center">Slurps will be pruned after {{ config.PRUNE_AFTER }} hours, and purged
+        after {{ config.PURGE_AFTER }} hours
     </article>
 {% endblock %}
 
