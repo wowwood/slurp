@@ -10,7 +10,10 @@ class BaseModel(JsonModel):
     Base model
     """
 
-    ts_created: datetime = Field(sortable=True, default=datetime.now(timezone.utc))
+    ts_created: datetime = Field(
+        sortable=True,
+        default_factory=datetime.now(timezone.utc).now,
+    )
     ts_updated: datetime = Field(sortable=True, default=datetime.now(timezone.utc))
 
     def save(self, **kwargs):
