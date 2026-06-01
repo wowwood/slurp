@@ -26,7 +26,7 @@ from slurp.models import Fetch, FetchMetadata
 from slurp.models.task import FetchEvent
 
 
-@shared_task(bind=True, dont_autoretry_for=(BadRequest,))
+@shared_task(bind=True, dont_autoretry_for=(BadRequest,), acks_late=True)
 def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
     """
     Fetch the given media from the network.
@@ -226,10 +226,9 @@ def cleanup_stale_tasks(self):
     """
     cleanup_stale_tasks removes persistent data about tasks that exceed the configured TASK_STALE duration.
     :param self:
-    :return:
+    :return: A list of IDs affected by the task
     """
     # Get the timestamp of the desired cutoffs.
-    # TODO configurable
     # The PRUNE cutoff simply destroys the output data blob.
     prune_cutoff = datetime.datetime.now(datetime.UTC) - datetime.timedelta(
         hours=current_app.config.get("PRUNE_AFTER")
