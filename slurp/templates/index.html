@@ -64,8 +64,13 @@
             {% endfor %}
         </ul>
     </article>
-    <article style="text-align: center">Slurps will be pruned after {{ config.PRUNE_AFTER }} hours, and purged
-        after {{ config.PURGE_AFTER }} hours
+    <article style="text-align: center">
+        <p>
+            Slurps will be pruned after {{ config.PRUNE_AFTER }} hours, and purged after {{ config.PURGE_AFTER }} hours.
+        </p>
+        <p>
+            All timestamps displayed are in UTC unless otherwise specified.
+        </p>
     </article>
 {% endblock %}
 

@@ -34,24 +34,41 @@
             opacity: 0.8;
         }
 
-        .fetcher-progress-message {
-            display: block;
-            padding: .2em .375em;
+        div.fetcher-log-container {
+            border: 2px #666666 solid;
+            padding: 1em;
         }
 
-        .fetcher-progress-message-level-error {
+        div.fetcher-log-container div.fetcher-log-entry {
+            display: flex;
+            flex-wrap: wrap;
+            border-radius: 2em 0 0 2em;
+            background: #222222;
+        }
+
+        div.fetcher-log-container div.log-ts {
+            margin: 0.2em;
+        }
+
+        div.fetcher-log-container div.log-entry {
+            flex-grow: 1;
+            flex-shrink: 1;
+            margin: 0.2em;
+        }
+
+        .message-level-error {
             color: red;
         }
 
-        .fetcher-progress-message-level-warning {
+        .message-level-warning {
             color: goldenrod;
         }
 
-        .fetcher-progress-message-level-info {
+        .message-level-info {
             color: lightskyblue;
         }
 
-        .fetcher-progress-message-level-success {
+        .message-level-success {
             color: green;
         }
 

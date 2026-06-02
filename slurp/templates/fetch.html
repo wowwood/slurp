@@ -21,30 +21,33 @@
             <span>This task has been <b>PRUNED</b> - output data has been destroyed.</span>
         {% endif %}
     {% endif %}
-    <section id="fetcher-log" class="fetcher-progress-log">
+    <article class="fetcher-progress-log">
         <h3>Fetch Log:</h3>
-        {% for data in fetchLog %}
-            <div class="fetcher-progress-message">
-                {% if data.typ == "created" %}
-                    <div class="fetcher-progress-message-level-success">🛫 Fetch job started
-                        at {{ data.ts_created }}</div>
-                {% elif data.typ == "log" %}
-                    <div class="fetcher-progress-message-level-{{ data.level }}">
-                        {% if data.level == "error" %}
-                            ⚠️ {{ data.message | safe }}
-                        {% else %}
-                            → {{ data.message | safe }}
-                        {% endif %}
-                    </div>
-                {% elif data.typ == "purge" %}
-                    <div class="fetcher-progress-message-level-error">{{ data.message | safe }}</div>
-                {% else %}
-                    <div class="fetcher-progress-message-level-info">{{ data.message | safe }}</div>
-                {% endif %}
+        <div class="fetcher-log-container" id="fetcher-log">
+            {% for data in fetchLog %}
+                <div class="fetcher-log-entry">
+                    <div class="log-ts">{{ data.ts_created.strftime('%Y/%m/%d %H:%M:%S') }}</div>
+                    {% if data.typ == "created" %}
+                        <div class="log-entry message-level-success">🛫 Fetch job started
+                            at {{ data.ts_created.strftime('%Y/%m/%d %H:%M:%S') }}</div>
+                    {% elif data.typ == "log" %}
+                        <div class="log-entry message-level-{{ data.level }}">
+                            {% if data.level == "error" %}
+                                ⚠️ {{ data.message | safe }}
+                            {% else %}
+                                → {{ data.message | safe }}
+                            {% endif %}
+                        </div>
+                    {% elif data.typ == "purge" %}
+                        <div class="log-entry message-level-error">{{ data.message | safe }}</div>
+                    {% else %}
+                        <div class="log-entry message-level-info">{{ data.message | safe }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
 
-            </div>
-        {% endfor %}
-    </section>
+    </article>
 {% endblock %}
 
 {% block tail %}
@@ -58,15 +61,32 @@
 
 {% block script %}
     <script>
+        // This is entirely hot garbage. Please replace me with a proper client side rendering framework
+        // like vue.js or React or something plz it burns
+        function format_ts(ts) {
+            const m = new Date(ts)
+            // thank you, JS
+            return m.getUTCFullYear() + "/" +
+                ("0" + (m.getUTCMonth() + 1)).slice(-2) + "/" +
+                ("0" + m.getUTCDate()).slice(-2) + " " +
+                ("0" + m.getUTCHours()).slice(-2) + ":" +
+                ("0" + m.getUTCMinutes()).slice(-2) + ":" +
+                ("0" + m.getUTCSeconds()).slice(-2);
+        }
+
         var source = new EventSource("{{ url_for('sse.stream') }}");
         const eventList = document.getElementById("fetcher-log");
         source.addEventListener('created_data', function (event) {
             var data = JSON.parse(event.data);
             console.log("created", data);
             const l = document.createElement("div")
-            l.classList = "fetcher-progress-message"
+            l.classList = "fetcher-log-entry"
+            const li_ts = document.createElement("div")
+            li_ts.classList = "log-ts"
+            li_ts.textContent = format_ts(data.ts_created)
+            l.appendChild(li_ts)
             const li = document.createElement("div")
-            li.classList = "fetcher-progress-message-level-" + data.level
+            li.classList = "log-entry message-level-" + data.level
             li.textContent = data
             l.appendChild(li)
             eventList.appendChild(l)
@@ -75,9 +95,13 @@
             var data = JSON.parse(event.data);
             console.log("message", data);
             const l = document.createElement("div")
-            l.classList = "fetcher-progress-message"
+            l.classList = "fetcher-log-entry"
+            const li_ts = document.createElement("div")
+            li_ts.classList = "log-ts"
+            li_ts.textContent = format_ts(data.ts_created)
+            l.appendChild(li_ts)
             const li = document.createElement("div")
-            li.classList = "fetcher-progress-message-level-" + data.level
+            li.classList = "log-entry message-level-" + data.level
             const jewel = (data.level !== 'error') ? "→" : "⚠️";
             li.textContent = jewel + " " + data.message
             l.appendChild(li)
@@ -87,9 +111,13 @@
             var data = JSON.parse(event.data);
             console.log("status", data);
             const l = document.createElement("div")
-            l.classList = "fetcher-progress-message"
+            l.classList = "fetcher-log-entry"
+            const li_ts = document.createElement("div")
+            li_ts.classList = "log-ts"
+            li_ts.textContent = format_ts(data.ts_created)
+            l.appendChild(li_ts)
             const li = document.createElement("div")
-            li.classList = "fetcher-progress-message-level-" + data.level
+            li.classList = "log-entry message-level-" + data.level
             li.textContent = data.message
             l.appendChild(li)
             eventList.appendChild(l)
@@ -99,7 +127,7 @@
             console.log(data);
         };
         source.addEventListener('error', function (event) {
-            alert("Failed to connect to the Slurp backend.");
+            alert("Lost connection to Slurp - please refresh.");
         }, false);
     </script>
 {% endblock %}
