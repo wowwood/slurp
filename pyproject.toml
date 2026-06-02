@@ -53,3 +53,6 @@ namespace = true
 [build-system]
 requires = ["uv_build>=0.9.22,<0.12.0"]
 build-backend = "uv_build"
+
+[pytest]
+tmp_path_retention_policy = "none"
