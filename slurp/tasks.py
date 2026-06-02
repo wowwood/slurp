@@ -187,7 +187,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                     "state": Fetch.TaskStatus.failed.value,
                     "message": str(e),
                 },
-                type="status",
+                type="fetch_updated",
             )
             task.emit_event(
                 "log",
@@ -207,7 +207,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                 "state": Fetch.TaskStatus.success.value,
                 "path": final_path,
             },
-            type="status",
+            type="fetch_updated",
         )
         task.emit_event(
             "log",
