@@ -137,8 +137,7 @@ class List(Resource):
                 slug=data.slug,
             )
             # Await the result from the worker.
-            result.get()
-            return {"fetch_id": result}, 201
+            return {"fetch_id": result.get()}, 201
             # return {"message": "Task created", "data": data.model_dump()}, 200
 
         except ValidationError as e:

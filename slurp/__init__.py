@@ -36,6 +36,12 @@ def __celery_init_app(app: Flask) -> Celery:
     celery_app.set_default()
     app.extensions["celery"] = celery_app
 
+    # Create task routes
+    celery_app.conf.task_routes = {
+        # Fetch tasks should take place in their own queue, as they can be quite lengthy.
+        "slurp.fetch": {"queue": "fetch"}
+    }
+
     # Bind periodic tasks
     celery_app.on_after_configure.connect(_init_periodic_tasks)
     return celery_app
