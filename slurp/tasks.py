@@ -26,7 +26,12 @@ from slurp.models import Fetch, FetchMetadata
 from slurp.models.task import FetchEvent
 
 
-@shared_task(bind=True, dont_autoretry_for=(BadRequest,), ignore_result=False)
+@shared_task(
+    name="slurp.create_fetch",
+    bind=True,
+    dont_autoretry_for=(BadRequest,),
+    ignore_result=False,
+)
 def create_fetch(self: Task, url: str, fmt: str, target: str, slug: str) -> str:
     """
     Create and enqueue the given media for fetching.
@@ -72,7 +77,9 @@ def create_fetch(self: Task, url: str, fmt: str, target: str, slug: str) -> str:
     return task.pk
 
 
-@shared_task(bind=True, dont_autoretry_for=(BadRequest,), acks_late=True)
+@shared_task(
+    name="slurp.fetch", bind=True, dont_autoretry_for=(BadRequest,), acks_late=True
+)
 def fetch(self: Task, pk: str):
     """
     Work the given fetch task, by downloading the media from the web, finalising it to the defined location.
@@ -261,7 +268,7 @@ def fetch(self: Task, pk: str):
         lock.release()
 
 
-@shared_task(bind=True, ignore_result=False)
+@shared_task(name="slurp.cleanup_stale_tasks", bind=True, ignore_result=False)
 def cleanup_stale_tasks(self):
     """
     cleanup_stale_tasks removes persistent data about tasks that exceed the configured TASK_STALE duration.
@@ -296,7 +303,7 @@ def cleanup_stale_tasks(self):
     return ids
 
 
-@shared_task(bind=True)
+@shared_task(name="slurp.cleanup_task", bind=True)
 def cleanup_task(self, task_pk: str, events: bool = False):
     """
     cleanup_task removes data about the given task from the database, and attempts to remove any files related to the fetch.
