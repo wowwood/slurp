@@ -62,8 +62,8 @@ class Fetch(BaseModel, index=True):
     # Whether this fetch has had its logs and events destroyed.
     purged: bool = Field(index=True, default=False)
 
-    def lock(self):
-        return self.db().lock(name=self.pk)
+    def lock(self, *args, **kwargs):
+        return self.db().lock(name=self.pk, *args, **kwargs)
 
     def emit_event(self, typ: str, level: str, message: str, status: int = 0):
         db_log = FetchEvent(

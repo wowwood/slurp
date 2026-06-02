@@ -18,3 +18,8 @@ class NoFetchersAvailable(Exception):
 class FetchersExhaustedError(Exception):
     def __str__(self):
         return "Available Fetchers exhausted"
+
+
+class FetchLockedError(Exception):
+    def __str__(self):
+        return "Fetch locked by another worker"
