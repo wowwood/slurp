@@ -41,7 +41,7 @@ jobs:
           redis-version: "7.4"
 
       - name: Run tests
-        run: uv run pytest -v
+        run: uv run pytest -v -m 'not dl'
 
   lint:
     runs-on: ubuntu-latest

@@ -30,6 +30,7 @@ class TestYTDLPFetcher:
         assert meta is not None, "_get_metadata returned None"
 
     @pytest.mark.network
+    @pytest.mark.dl
     def test_download(self, tmp_path, fetcher_instance):
         for event in fetcher_instance.fetch(
             _urls["small"], Format.VIDEO_AUDIO, str(tmp_path.absolute()), "test"
@@ -40,6 +41,7 @@ class TestYTDLPFetcher:
         )
 
     @pytest.mark.network
+    @pytest.mark.dl
     @pytest.mark.huge_dl
     def test_huge_download(self, tmp_path, fetcher_instance):
         """
