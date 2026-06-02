@@ -1,5 +1,6 @@
 import httpx
 import pytest
+import yt_dlp.utils
 
 from slurp import YTDLPFetcher
 from slurp.fetchers.types import Format
@@ -19,6 +20,10 @@ def __can_contact_youtube() -> bool:
 
 
 @pytest.mark.skipif(not __can_contact_youtube(), reason="Cannot contact YouTube")
+@pytest.mark.xfail(
+    raises=yt_dlp.utils.DownloadError,
+    reason="Bot detection can cause these tests to fail",
+)
 class TestYTDLPFetcher:
     @pytest.fixture
     def fetcher_instance(self):
