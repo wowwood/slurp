@@ -7,7 +7,7 @@ from pydantic import BaseModel, BeforeValidator, Field, field_serializer
 
 from slurp.fetchers.types import Format
 from slurp.models.task import Fetch
-from slurp.tasks import fetch
+from slurp.tasks import create_fetch
 
 api = Namespace("task", description="Fetch tasks")
 
@@ -129,14 +129,16 @@ class List(Resource):
                     "error": "This target is not valid. Please refer to Slurp's configuration."
                 }, 400
 
-            # Request that the fetch be worked on by the task queue.
-            result = fetch.delay(
+            # Create the fetch - it is automatically worked on by the task queue.
+            result = create_fetch.delay(
                 url=data.url,
-                format=data.format,
+                fmt=data.format,
                 target=data.target,
                 slug=data.slug,
             )
-            return {"worker_id": result.id}, 201
+            # Await the result from the worker.
+            result.get()
+            return {"fetch_id": result}, 201
             # return {"message": "Task created", "data": data.model_dump()}, 200
 
         except ValidationError as e:
@@ -148,5 +150,5 @@ class Work(Resource):
     @api.doc("get_task_by_worker")
     @api.marshal_with(fetchTask)
     def get(self, worker_id):
-        fetch = Fetch.find(worker_id == worker_id).first()
-        return fetch
+        fetch_obj = Fetch.find(worker_id == worker_id).first()
+        return fetch_obj

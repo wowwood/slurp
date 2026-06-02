@@ -13,31 +13,30 @@ from slurp.exceptions import FinaliserError
 from slurp.fetchers import fetchers_for_url
 from slurp.fetchers.exceptions import (
     FetchersExhaustedError,
+    FetchLockedError,
     NoFetchersAvailable,
 )
 from slurp.fetchers.types import (
     FetcherMediaAvailable,
     FetcherMediaMetadataAvailable,
     FetcherProgressReport,
-    Format,
 )
 from slurp.finaliser import finalise
 from slurp.models import Fetch, FetchMetadata
 from slurp.models.task import FetchEvent
 
 
-@shared_task(bind=True, dont_autoretry_for=(BadRequest,), acks_late=True)
-def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
+@shared_task(bind=True, dont_autoretry_for=(BadRequest,), ignore_result=False)
+def create_fetch(self: Task, url: str, fmt: str, target: str, slug: str) -> str:
     """
-    Fetch the given media from the network.
+    Create and enqueue the given media for fetching.
     :param self: Celery task object.
     :param url: Target URL.
-    :param format: Format to perform the download in.
+    :param fmt: Format to perform the download in as defined by fetchers.types.Format.
     :param target: Target output directory. Must be configured.
     :param slug: Output filename.
-    :return: Absolute path to where the successfully fetched media resides.
+    :return: Fetch PK.
     """
-
     # Safety: Validate the destination is permitted
     if target not in current_app.config["OUTPUTS"]:
         raise BadRequest(
@@ -46,37 +45,74 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
 
     task = Fetch(
         url=url,
-        format=format,
+        format=fmt,
         target=target,
         slug=slug,
     )
-    # This assertion is mainly here to clear some IDE warnings.
-    assert task.target is not None, "task target must be set"
-    task.status = Fetch.TaskStatus.running
+    task.status = Fetch.TaskStatus.created
     task.worker_id = self.request.id
     task.save()
+    assert task.pk is not None, "task pk was not set by flush"
 
-    lock = task.lock()
-    try:
-        lock.acquire(token=self.request.id)
+    sse.publish(
+        {
+            "task_id": task.pk,
+            "url": task.url,
+            "format": task.format,
+            "target": task.target,
+            "slug": task.slug,
+        },
+        type="task_created",
+    )
 
-        sse.publish(
-            {
-                "task_id": task.pk,
-                "url": task.url,
-                "format": format,
-                "target": target,
-                "slug": slug,
-            },
-            type="created_data",
+    # Enqueue.
+    fetch.delay(
+        pk=task.pk,
+    )
+    return task.pk
+
+
+@shared_task(bind=True, dont_autoretry_for=(BadRequest,), acks_late=True)
+def fetch(self: Task, pk: str):
+    """
+    Work the given fetch task, by downloading the media from the web, finalising it to the defined location.
+    It is not intended to call this task directly - it is automatically enqueued by create_fetch.
+    :param self: Celery task object.
+    :param pk: Primary Key of the task in the database.
+    :return: None
+    """
+
+    task = Fetch.find(Fetch.pk == pk).first()
+    if not task:
+        raise BadRequest(f"Task {pk} does not exist on database")
+
+    # This assertion is mainly here to clear some IDE warnings.
+    assert task.target is not None, "task target must be set"
+
+    # Re-validate that the destination is permitted for extra safety - just in case the database has been tampered with
+    if task.target not in current_app.config["OUTPUTS"]:
+        raise BadRequest(
+            "This target is not valid. Please refer to Slurp's configuration."
         )
-        task.emit_event("created", "info", f"Running task {task.pk}")
 
-        # Perform the fetch.
-        # yield from stream_fetch(
-        #     url=task.url, format=task.format, target=task.target, slug=task.slug
-        # )
+    # We take a lock to ensure that we're the only thing working with the given Fetch.
+    # If multiple workers were working the same fetch, not only is it a waste of resources, but
+    # there's a very real possibility they may end up corrupting
+    # the output file once it's written to disk.
+    lock = task.lock(blocking=False)
+    try:
+        l_success = lock.acquire(token=self.request.id)
+        if not l_success:
+            raise FetchLockedError
+
+        # Update the task status
+        task.status = Fetch.TaskStatus.running
+        task.worker_id = self.request.id
+        task.save()
+        task.emit_event("log", "info", f"Task acquired by job {self.request.id}")
+
         try:
+            # Find all fetchers valid for the fetch URL
             fetchers = fetchers_for_url(task.url)
             if len(fetchers) == 0:
                 raise NoFetchersAvailable
@@ -104,6 +140,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                         "info",
                         f"{'Trying Fetch again' if idx > 0 else 'Fetching'} with {fetcher.name}",
                     )
+                    # Call the fetcher module, and receive events from it
                     for event in fetcher.fetch(
                         task.url, task.format, tmp_dir, task.slug
                     ):
@@ -158,12 +195,13 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                     # yield "<article class='fetcher-outcome fetcher-progress-message-level-error'>☹️ Slurp failed - out of available fetchers.</article>"
                     raise FetchersExhaustedError
 
+                # Safety assertion
                 assert media_path is not None, (
                     "fetcher reported success yet media_path is None"
                 )
 
-                # Run the finaliser.
-                self.update_state(event="Finalising...")
+                # The fetcher seems to have worked - run the finaliser.
+                self.update_state(event="finalising")
                 final_path: str | None = None
                 try:
                     for event in finalise(media_path, task.target):
@@ -178,6 +216,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
                     raise FinaliserError(e)
                 # yield f"<article class='fetcher-outcome fetcher-progress-message-level-success'>🥤 Media slurped to {final_path}</article>"
         except Exception as e:
+            # Catch exceptions and set the task state appropriately.
             self.update_state(status=Fetch.TaskStatus.failed.value, reason=str(e))
             task.status = Fetch.TaskStatus.failed
             task.save()
@@ -197,6 +236,7 @@ def fetch(self: Task, url: str, format: Format, target: str, slug: str) -> str:
             raise e
 
         assert final_path is not None, "final_path not properly set by fetcher routine"
+        # Update the fetch with the final state.
         self.update_state(status=Fetch.TaskStatus.success.value, path=final_path)
         task.status = Fetch.TaskStatus.success.value
         task.output_path = final_path
