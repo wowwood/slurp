@@ -87,8 +87,12 @@ _The host flag exposes it on the local interface, not just on the machine itself
 You'll also need the job runner. To run that:
 
 ```bash
-celery -A slurp.make_celery:celery worker
+celery -A slurp.make_celery:celery worker -Q celery,fetch
 ```
+
+You might want to run separate celery and fetch workers so you don't end up with a blocked queue (which can stop new
+tasks from being created over the REST API).
+To do that, just run two Celery instances: one with `-Q celery` and one with `-Q fetch`.
 
 # Configuration
 
