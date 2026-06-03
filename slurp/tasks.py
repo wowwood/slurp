@@ -21,7 +21,7 @@ from slurp.fetchers.types import (
     FetcherMediaMetadataAvailable,
     FetcherProgressReport,
 )
-from slurp.finaliser import finalise
+from slurp.finaliser import finalise, troubleshooter
 from slurp.models import Fetch, FetchMetadata
 from slurp.models.task import FetchEvent
 
@@ -224,22 +224,17 @@ def fetch(self: Task, pk: str):
                 # yield f"<article class='fetcher-outcome fetcher-progress-message-level-success'>🥤 Media slurped to {final_path}</article>"
         except Exception as e:
             # Catch exceptions and set the task state appropriately.
-            self.update_state(status=Fetch.TaskStatus.failed.value, reason=str(e))
-            task.status = Fetch.TaskStatus.failed
-            task.save()
-            sse.publish(
-                {
-                    "fetch_id": task.pk,
-                    "state": Fetch.TaskStatus.failed.value,
-                    "message": str(e),
-                },
-                type="fetch_updated",
-            )
-            task.emit_event(
-                "log",
-                "error",
-                f"Fetch failed: {e}",
-            )
+            # Before that, run the troubleshooter to see if there's a reason the error happened.
+            task.emit_event("log", "info", "Attempting to troubleshoot...")
+            for event in troubleshooter(task):
+                match event:
+                    case FetcherProgressReport() as trbl_msg:
+                        task.emit_event(
+                            trbl_msg.typ,
+                            trbl_msg.level,
+                            trbl_msg.message,
+                            trbl_msg.status,
+                        )
             raise e
 
         assert final_path is not None, "final_path not properly set by fetcher routine"
@@ -263,6 +258,25 @@ def fetch(self: Task, pk: str):
         )
 
         return final_path
+    except Exception as e:
+        # Mark the task failed and re-raise
+        self.update_state(status=Fetch.TaskStatus.failed.value, reason=str(e))
+        task.status = Fetch.TaskStatus.failed
+        task.save()
+        sse.publish(
+            {
+                "fetch_id": task.pk,
+                "state": Fetch.TaskStatus.failed.value,
+                "message": str(e),
+            },
+            type="fetch_updated",
+        )
+        task.emit_event(
+            "log",
+            "error",
+            f"Fetch failed: {e}",
+        )
+        raise e
     finally:
         # Always release the lock to avoid a deadlock.
         lock.release()
