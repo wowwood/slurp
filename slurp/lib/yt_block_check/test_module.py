@@ -40,7 +40,7 @@ class TestYTBlockCheck:
 
     @pytest.mark.network
     @pytest.mark.parametrize("url", _urls["valid"])
-    def test_valid_videos(self, fetcher_instance, url):
+    def test_valid_videos(self, fetcher_instance, url: dict[str, str]):
         result = fetcher_instance.check(url["url"])
         assert result == url["output"]
 
