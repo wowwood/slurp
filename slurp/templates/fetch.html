@@ -2,132 +2,133 @@
 {% block head %}
 {% endblock %}
 {% block main %}
-    <script type="text/javascript">
-        const resizeObserver = new ResizeObserver((_) => {
-            window.scrollTo(0, document.body.scrollHeight);
-        });
-        resizeObserver.observe(document.body);
-    </script>
-    <h1>Slug <kbd>🐌{{ fetch.slug }}</kbd> {{ fetch.status.value }}</h1>
-    <h2>Job ID <code title="{{ fetch.pk }}">🥤{{ fetch.pk[-4:] }}</code></h2>
-    <h3>📆 Created {{ fetch.ts_created.strftime('%Y-%m-%d %H:%M') }}</h3>
+<script type="text/javascript">
+    const resizeObserver = new ResizeObserver((_) => {
+        window.scrollTo(0, document.body.scrollHeight);
+    });
+    resizeObserver.observe(document.body);
+</script>
+<h1>Slug <kbd>🐌{{ fetch.slug }}</kbd> {{ fetch.status.value }}</h1>
+<h2>Job ID <code title="{{ fetch.pk }}">🥤{{ fetch.pk[-4:] }}</code></h2>
+<h3>📆 Created {{ fetch.ts_created.strftime('%Y-%m-%d %H:%M') }}</h3>
 
-    {% include "elements/media.html" %}
+{% include "elements/media.html" %}
 
-    {% if fetch.pruned %}
-        {% if fetch.purged %}
-            <span>This task has been <b>PURGED</b> - output data and logs are not available.</span>
-        {% else %}
-            <span>This task has been <b>PRUNED</b> - output data has been destroyed.</span>
-        {% endif %}
-    {% endif %}
-    <article class="fetcher-progress-log">
-        <h3>Fetch Log:</h3>
-        <div class="fetcher-log-container" id="fetcher-log">
-            {% for data in fetchLog %}
-                <div class="fetcher-log-entry">
-                    <div class="log-ts">{{ data.ts_created.strftime('%Y/%m/%d %H:%M:%S') }}</div>
-                    {% if data.typ == "created" %}
-                        <div class="log-entry message-level-success">🛫 Fetch job started
-                            at {{ data.ts_created.strftime('%Y/%m/%d %H:%M:%S') }}</div>
-                    {% elif data.typ == "log" %}
-                        <div class="log-entry message-level-{{ data.level }}">
-                            {% if data.level == "error" %}
-                                ⚠️ {{ data.message | safe }}
-                            {% else %}
-                                → {{ data.message | safe }}
-                            {% endif %}
-                        </div>
-                    {% elif data.typ == "purge" %}
-                        <div class="log-entry message-level-error">{{ data.message | safe }}</div>
-                    {% else %}
-                        <div class="log-entry message-level-info">{{ data.message | safe }}</div>
-                    {% endif %}
-                </div>
-            {% endfor %}
+{% if fetch.pruned %}
+{% if fetch.purged %}
+<span>This task has been <b>PURGED</b> - output data and logs are not available.</span>
+{% else %}
+<span>This task has been <b>PRUNED</b> - output data has been destroyed.</span>
+{% endif %}
+{% endif %}
+<article class="fetcher-progress-log">
+    <h3>Fetch Log:</h3>
+    <div class="fetcher-log-container" id="fetcher-log">
+        {% for data in fetchLog %}
+        <div class="fetcher-log-entry">
+            <kbd class="log-ts">{{ data.ts_created.strftime('%Y/%m/%d %H:%M:%S') }}</kbd>
+            {% if data.typ == "created" %}
+            <kbd class="log-entry message-level-success">🛫 Fetch job started
+                at {{ data.ts_created.strftime('%Y/%m/%d %H:%M:%S') }}
+            </kbd>
+            {% elif data.typ == "log" %}
+            <kbd class="log-entry message-level-{{ data.level }}">
+                {% if data.level == "error" %}
+                ⚠️ {{ data.message | safe }}
+                {% else %}
+                → {{ data.message | safe }}
+                {% endif %}
+            </kbd>
+            {% elif data.typ == "purge" %}
+            <kbd class="log-entry message-level-error">{{ data.message | safe }}</kbd>
+            {% else %}
+            <kbd class="log-entry message-level-info">{{ data.message | safe }}</kbd>
+            {% endif %}
         </div>
+        {% endfor %}
+    </div>
 
-    </article>
+</article>
 {% endblock %}
 
 {% block tail %}
-    <script type="text/javascript">
-        const resizeObserver = new ResizeObserver((_) => {
-            window.scrollTo(0, document.body.scrollHeight);
-        });
-        resizeObserver.observe(document.body);
-    </script>
+<script type="text/javascript">
+    const resizeObserver = new ResizeObserver((_) => {
+        window.scrollTo(0, document.body.scrollHeight);
+    });
+    resizeObserver.observe(document.body);
+</script>
 {% endblock %}
 
 {% block script %}
-    <script>
-        // This is entirely hot garbage. Please replace me with a proper client side rendering framework
-        // like vue.js or React or something plz it burns
-        function format_ts(ts) {
-            const m = new Date(ts)
-            // thank you, JS
-            return m.getUTCFullYear() + "/" +
-                ("0" + (m.getUTCMonth() + 1)).slice(-2) + "/" +
-                ("0" + m.getUTCDate()).slice(-2) + " " +
-                ("0" + m.getUTCHours()).slice(-2) + ":" +
-                ("0" + m.getUTCMinutes()).slice(-2) + ":" +
-                ("0" + m.getUTCSeconds()).slice(-2);
-        }
+<script>
+    // This is entirely hot garbage. Please replace me with a proper client side rendering framework
+    // like vue.js or React or something plz it burns
+    function format_ts(ts) {
+        const m = new Date(ts)
+        // thank you, JS
+        return m.getUTCFullYear() + "/" +
+            ("0" + (m.getUTCMonth() + 1)).slice(-2) + "/" +
+            ("0" + m.getUTCDate()).slice(-2) + " " +
+            ("0" + m.getUTCHours()).slice(-2) + ":" +
+            ("0" + m.getUTCMinutes()).slice(-2) + ":" +
+            ("0" + m.getUTCSeconds()).slice(-2);
+    }
 
-        var source = new EventSource("{{ url_for('sse.stream') }}");
-        const eventList = document.getElementById("fetcher-log");
-        source.addEventListener('created_data', function (event) {
-            var data = JSON.parse(event.data);
-            console.log("created", data);
-            const l = document.createElement("div")
-            l.classList = "fetcher-log-entry"
-            const li_ts = document.createElement("div")
-            li_ts.classList = "log-ts"
-            li_ts.textContent = format_ts(data.ts_created)
-            l.appendChild(li_ts)
-            const li = document.createElement("div")
-            li.classList = "log-entry message-level-" + data.level
-            li.textContent = data
-            l.appendChild(li)
-            eventList.appendChild(l)
-        }, false);
-        source.addEventListener('message', function (event) {
-            var data = JSON.parse(event.data);
-            console.log("message", data);
-            const l = document.createElement("div")
-            l.classList = "fetcher-log-entry"
-            const li_ts = document.createElement("div")
-            li_ts.classList = "log-ts"
-            li_ts.textContent = format_ts(data.ts_created)
-            l.appendChild(li_ts)
-            const li = document.createElement("div")
-            li.classList = "log-entry message-level-" + data.level
-            const jewel = (data.level !== 'error') ? "→" : "⚠️";
-            li.textContent = jewel + " " + data.message
-            l.appendChild(li)
-            eventList.appendChild(l)
-        }, false);
-        source.addEventListener('status', function (event) {
-            var data = JSON.parse(event.data);
-            console.log("status", data);
-            const l = document.createElement("div")
-            l.classList = "fetcher-log-entry"
-            const li_ts = document.createElement("div")
-            li_ts.classList = "log-ts"
-            li_ts.textContent = format_ts(data.ts_created)
-            l.appendChild(li_ts)
-            const li = document.createElement("div")
-            li.classList = "log-entry message-level-" + data.level
-            li.textContent = data.message
-            l.appendChild(li)
-            eventList.appendChild(l)
-        }, false);
-        source.onmessage = (event) => {
-            var data = JSON.parse(event.data);
-            console.log(data);
-        };
-        source.addEventListener('error', function (event) {
-            alert("Lost connection to Slurp - please refresh.");
-        }, false);
-    </script>
+    var source = new EventSource("{{ url_for('sse.stream') }}");
+    const eventList = document.getElementById("fetcher-log");
+    source.addEventListener('created_data', function (event) {
+        var data = JSON.parse(event.data);
+        console.log("created", data);
+        const l = document.createElement("div")
+        l.classList = "fetcher-log-entry"
+        const li_ts = document.createElement("div")
+        li_ts.classList = "log-ts"
+        li_ts.textContent = format_ts(data.ts_created)
+        l.appendChild(li_ts)
+        const li = document.createElement("div")
+        li.classList = "log-entry message-level-" + data.level
+        li.textContent = data
+        l.appendChild(li)
+        eventList.appendChild(l)
+    }, false);
+    source.addEventListener('message', function (event) {
+        var data = JSON.parse(event.data);
+        console.log("message", data);
+        const l = document.createElement("div")
+        l.classList = "fetcher-log-entry"
+        const li_ts = document.createElement("div")
+        li_ts.classList = "log-ts"
+        li_ts.textContent = format_ts(data.ts_created)
+        l.appendChild(li_ts)
+        const li = document.createElement("div")
+        li.classList = "log-entry message-level-" + data.level
+        const jewel = (data.level !== 'error') ? "→" : "⚠️";
+        li.textContent = jewel + " " + data.message
+        l.appendChild(li)
+        eventList.appendChild(l)
+    }, false);
+    source.addEventListener('status', function (event) {
+        var data = JSON.parse(event.data);
+        console.log("status", data);
+        const l = document.createElement("div")
+        l.classList = "fetcher-log-entry"
+        const li_ts = document.createElement("div")
+        li_ts.classList = "log-ts"
+        li_ts.textContent = format_ts(data.ts_created)
+        l.appendChild(li_ts)
+        const li = document.createElement("div")
+        li.classList = "log-entry message-level-" + data.level
+        li.textContent = data.message
+        l.appendChild(li)
+        eventList.appendChild(l)
+    }, false);
+    source.onmessage = (event) => {
+        var data = JSON.parse(event.data);
+        console.log(data);
+    };
+    source.addEventListener('error', function (event) {
+        alert("Lost connection to Slurp - please refresh.");
+    }, false);
+</script>
 {% endblock %}
