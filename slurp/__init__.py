@@ -1,4 +1,3 @@
-import ast
 import os
 import tomllib
 
@@ -8,13 +7,7 @@ from flask_sse import sse
 
 from slurp.api import api_blueprint
 from slurp.db import bind_redis
-from slurp.fetchers import (
-    fetchers,
-)
-from slurp.fetchers.cobalt import CobaltFetcher
-from slurp.fetchers.exceptions import FetcherMisconfiguredError
-from slurp.fetchers.get_iplayer import BBCiPlayerFetcher
-from slurp.fetchers.ytdlp import YTDLPFetcher
+from slurp.fetchers import fetcher_manager
 from slurp.helpers import format_duration
 from slurp.routes import main_blueprint
 from slurp.tasks import _init_periodic_tasks
@@ -87,58 +80,10 @@ def create_app(config_filename: str = "config.toml") -> Flask:
         app.config["OUTPUTS"] = app.config.get("OUTPUTS", "").split(os.pathsep)
         app.logger.error(f"Outputs post-split: {app.config['OUTPUTS']}")
 
-    # Fill fetchers config with configured fetchers.
-    if app.config.get("FETCHER_YTDLP_ENABLED") is True:
-        # Scope js_runtimes correctly
-        js_runtimes: dict[str, dict[str, dict[str, str]]] | None = None
-        if app.config.get("FETCHER_YTDLP_JS_RUNTIMES") is not None:
-            # Only try to parse the runtimes configuration if it's been set in the first place
-            try:
-                js_runtimes = ast.literal_eval(
-                    app.config.get("FETCHER_YTDLP_JS_RUNTIMES", None)
-                )
-            except SyntaxError as e:
-                raise SyntaxError(
-                    f"Parsing FETCHER_YTDLP_JS_RUNTIMES failed: {e}"
-                ) from e
-        else:
-            app.logger.warning(
-                "The YTDLP fetcher does not have a Javascript runtime configured. "
-                "It will still function, but in a degraded state - please set one using the FETCHER_YTDLP_JS_RUNTIMES config flag. "
-                "If 'deno' is available on the system PATH, please ignore this warning."
-            )
-        try:
-            fetchers.append(
-                YTDLPFetcher(
-                    js_runtimes=js_runtimes,
-                )
-            )
-        except FetcherMisconfiguredError as e:
-            app.logger.error("Failed to initialize the YTDLP fetcher: %s", e)
-
-    if app.config.get("FETCHER_COBALT_ENABLED") is True:
-        try:
-            fetchers.append(
-                CobaltFetcher(
-                    app.config.get("FETCHER_COBALT_URL", "http://localhost:9000"),
-                    app.config.get("FETCHER_COBALT_KEY", None),
-                )
-            )
-        except FetcherMisconfiguredError as e:
-            app.logger.error("Failed to initialize the Cobalt fetcher: %s", e)
-
-    if app.config.get("FETCHER_BBC_IPLAYER_ENABLED") is True:
-        try:
-            fetchers.append(BBCiPlayerFetcher())
-        except FetcherMisconfiguredError as e:
-            app.logger.error("Failed to initialize the get_iplayer fetcher: %s", e)
-
-    if len(fetchers) == 0:
-        # No fetchers configured - fatal error.
-        raise Exception("No fetchers enabled - please enable some!")
+    fetcher_manager.init_app(app)
 
     app.logger.info(
-        f"The following fetchers are enabled: [{', '.join([f.name for f in fetchers])}]"
+        f"The following fetchers are enabled: [{', '.join([f.name for f in app.extensions['fetchers'].get_all()])}]"
     )
 
     app.jinja_env.filters["duration"] = format_duration

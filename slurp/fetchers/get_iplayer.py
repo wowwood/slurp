@@ -10,8 +10,11 @@ from datetime import datetime
 from glob import glob
 from typing import Generator
 
-from slurp import FetcherMisconfiguredError
-from slurp.fetchers.exceptions import AmbiguousQueryError, NoUpstreamMetadataError
+from slurp.fetchers.exceptions import (
+    AmbiguousQueryError,
+    FetcherMisconfiguredError,
+    NoUpstreamMetadataError,
+)
 from slurp.fetchers.types import (
     Fetcher,
     FetcherMediaAvailable,

@@ -9,9 +9,6 @@ from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField, URLField
 from wtforms.validators import URL, AnyOf, DataRequired
 
-from slurp.fetchers import (
-    fetchers,
-)
 from slurp.fetchers.types import (
     Format,
 )
@@ -39,7 +36,10 @@ def index():
     allTasks = Fetch.find().sort_by("-ts_created").page(offset=0, limit=10)
 
     return render_template(
-        "index.html", form=form, fetchers=fetchers, allTasks=allTasks
+        "index.html",
+        form=form,
+        fetchers=current_app.extensions["fetchers"].get_all(),
+        allTasks=allTasks,
     )
 
 
