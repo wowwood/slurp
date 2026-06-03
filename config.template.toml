@@ -18,6 +18,10 @@ PURGE_AFTER = 24
 ## Prune after this many hours:
 PRUNE_AFTER = 168
 
+# External API keys
+## YouTube Data API key. Get a token from the Google Cloud console - https://developers.google.com/youtube/v3/getting-started
+# EXT_API_YT_TOKEN = ""
+
 # Enable the YTDLP fetcher.
 FETCHER_YTDLP_ENABLED = true
 # Set a JavaScript runtime for YTDLP to use. This is optional, but YTDLP will run degraded if you don't set this.

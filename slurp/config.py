@@ -26,6 +26,10 @@ class DefaultConfig:
     ## Prune after this many hours:
     PRUNE_AFTER: int = 168  # 7 days
 
+    # External API keys
+    ## YouTube Data API key. Get a token from the Google Cloud console - https://developers.google.com/youtube/v3/getting-started
+    EXT_API_YT_TOKEN: str | None = None
+
     # Enable the YTDLP fetcher.
     FETCHER_YTDLP_ENABLED: bool = True
 
