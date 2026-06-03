@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.red.min.css">
+    <link
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.colors.min.css"
+            rel="stylesheet"
+    >
     <link rel="icon" type="image/png" href="/static/favicon-96x96.png" sizes="96x96"/>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
     <link rel="shortcut icon" href="/static/favicon.ico"/>
@@ -35,41 +39,41 @@
         }
 
         div.fetcher-log-container {
-            border: 2px #666666 solid;
+            border: 2px var(--pico-color-grey-300) solid;
             padding: 1em;
         }
 
         div.fetcher-log-container div.fetcher-log-entry {
             display: flex;
-            flex-wrap: wrap;
-            border-radius: 2em 0 0 2em;
-            background: #222222;
+            flex-wrap: nowrap;
+            border-radius: 5px 0 0 5px;
         }
 
-        div.fetcher-log-container div.log-ts {
+        div.fetcher-log-container kbd.log-ts {
             margin: 0.2em;
+            white-space: nowrap;
         }
 
-        div.fetcher-log-container div.log-entry {
+        div.fetcher-log-container kbd.log-entry {
             flex-grow: 1;
             flex-shrink: 1;
             margin: 0.2em;
         }
 
         .message-level-error {
-            color: red;
+            color: var(--pico-color-red-450)
         }
 
         .message-level-warning {
-            color: goldenrod;
+            color: var(--pico-color-amber-200)
         }
 
         .message-level-info {
-            color: lightskyblue;
+            color: var(--pico-color-azure-500);
         }
 
         .message-level-success {
-            color: green;
+            color: var(--pico-color-green-500)
         }
 
         .fetcher-outcome {
@@ -126,7 +130,7 @@
 <body>
 <main class="container">
     {% block main %}
-        <pre>template did not override 'main' block</pre>
+    <pre>template did not override 'main' block</pre>
     {% endblock %}
 </main>
 </body>
