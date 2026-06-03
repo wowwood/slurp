@@ -6,7 +6,7 @@ from flask_restx import Namespace, Resource, ValidationError, fields
 from pydantic import BaseModel, BeforeValidator, Field, field_serializer
 
 from slurp.fetchers.types import Format
-from slurp.models.task import Fetch
+from slurp.models.task import Fetch, FetchEvent
 from slurp.tasks import create_fetch
 
 api = Namespace("task", description="Fetch tasks")
@@ -34,6 +34,17 @@ fetchMetadata = api.model(
     },
 )
 
+fetchEvent = api.model(
+    "FetchEvent",
+    {
+        "fetch_id": fields.String(description="The ID to which this Event relates."),
+        "typ": fields.String(description="Event type"),
+        "level": fields.String(description="Event level"),
+        "message": fields.String(description="Event message"),
+        "status": fields.Integer(description="Event status"),
+    },
+)
+
 fetchTask = api.model(
     "FetchTask",
     {
@@ -46,6 +57,15 @@ fetchTask = api.model(
         "target": fields.String(description="Filesystem target identifier"),
         "status": __EnumValue(description="Task status"),
         "meta": fields.Nested(fetchMetadata, default={}),
+        "output_path": fields.String(
+            description="Output path on filesystem - only present if the task succeeded"
+        ),
+        "pruned": fields.Boolean(
+            description="Task was pruned (the output was scrubbed from disk)"
+        ),
+        "purged": fields.Boolean(
+            description="Task was purged (logs have been removed)"
+        ),
         "worker_id": fields.String(description="Work ID - use to query work status"),
     },
 )
@@ -84,7 +104,7 @@ def accept_enum_name(enum: Type[Enum]) -> BeforeValidator:
     return BeforeValidator(validator)
 
 
-class createTaskSchema(BaseModel):
+class CreateTaskSchema(BaseModel):
     url: str = Field(description="URL that should be fetched")
     format: Annotated[Format | None, accept_enum_name(Format)] = Field(
         description="Download format"
@@ -121,7 +141,7 @@ class List(Resource):
                 raw_data = request.form.to_dict()
 
             # Validate with Pydantic
-            data = createTaskSchema(**raw_data)
+            data = CreateTaskSchema(**raw_data)
 
             # Safety: Validate the destination is permitted
             if data.target not in current_app.config["OUTPUTS"]:
@@ -142,6 +162,24 @@ class List(Resource):
 
         except ValidationError as e:
             return {"message": "Validation failed", "errors": e}, 400
+
+
+@api.route("/<string:task_id>")
+class Task(Resource):
+    @api.doc("get_task")
+    @api.marshal_with(fetchTask)
+    def get(self, task_id):
+        fetch = Fetch.find(Fetch.pk == task_id).first()
+        return fetch
+
+
+@api.route("/<string:task_id>/events")
+class TaskEvents(Resource):
+    @api.doc("get_events")
+    @api.marshal_list_with(fetchEvent)
+    def get(self, task_id):
+        events = FetchEvent.find(FetchEvent.fetch_id == task_id).first()
+        return events
 
 
 @api.route("/worker/<string:worker_id>")
