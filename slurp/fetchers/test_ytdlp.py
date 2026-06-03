@@ -2,8 +2,8 @@ import httpx
 import pytest
 import yt_dlp.utils
 
-from slurp import YTDLPFetcher
 from slurp.fetchers.types import Format
+from slurp.fetchers.ytdlp import YTDLPFetcher
 
 _urls = {
     "small": "https://www.youtube.com/watch?v=eVrYbKBrI7o",  # toot
