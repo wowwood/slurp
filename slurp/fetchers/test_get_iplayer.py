@@ -1,8 +1,8 @@
 import httpx
 import pytest
 
-from slurp import BBCiPlayerFetcher
 from slurp.fetchers.exceptions import FetcherMisconfiguredError, NoUpstreamMetadataError
+from slurp.fetchers.get_iplayer import BBCiPlayerFetcher
 
 _urls = {
     "valid_tv": [
