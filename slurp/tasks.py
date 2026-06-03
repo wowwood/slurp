@@ -10,7 +10,6 @@ from flask_sse import sse
 from werkzeug.exceptions import BadRequest
 
 from slurp.exceptions import FinaliserError
-from slurp.fetchers import fetchers_for_url
 from slurp.fetchers.exceptions import (
     FetchersExhaustedError,
     FetchLockedError,
@@ -120,7 +119,7 @@ def fetch(self: Task, pk: str):
 
         try:
             # Find all fetchers valid for the fetch URL
-            fetchers = fetchers_for_url(task.url)
+            fetchers = current_app.extensions["fetchers"].get_for_url(task.url)
             if len(fetchers) == 0:
                 raise NoFetchersAvailable
 
