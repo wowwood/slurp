@@ -2,8 +2,9 @@ from enum import Enum
 from typing import Annotated, Any, Type
 
 from flask import current_app, request
-from flask_restx import Namespace, Resource, ValidationError, fields
+from flask_restx import Namespace, Resource, ValidationError, abort, fields
 from pydantic import BaseModel, BeforeValidator, Field, field_serializer
+from redis_om import model
 
 from slurp.fetchers.types import Format
 from slurp.models.task import Fetch, FetchEvent
@@ -169,7 +170,10 @@ class Task(Resource):
     @api.doc("get_task")
     @api.marshal_with(fetchTask)
     def get(self, task_id):
-        fetch = Fetch.find(Fetch.pk == task_id).first()
+        try:
+            fetch = Fetch.get(task_id)
+        except model.NotFoundError:
+            return abort(404)
         return fetch
 
 
