@@ -4,5 +4,42 @@ set -e
 
 # cp -r /public /app
 
-# Stubbed for now.
+_is_celery_command () {
+  local cmd="$1"; shift
+
+  python - <<EOF
+import sys
+from celery.bin.celery import celery
+from click import Context
+sys.exit(0 if '$cmd' in celery.list_commands(Context(celery)) else 1)
+EOF
+}
+
+if [ "$1" != 'celery' ]; then
+  # If first argument looks like an option or a Celery command, add the 'celery'
+  if [ "${1#-}" != "$1" ] || _is_celery_command "$1"; then
+    set -- celery "$@"
+  fi
+
+fi
+
+if [ "$1" = 'celery' ]; then
+  # Set the correct command to make use of the app factory
+  set -- celery -A slurp.make_celery:celery "${@:2}"
+
+  # shellcheck disable=SC2034
+  beat_pidfile=/tmp/celery_beat.pid
+  # shellcheck disable=SC2034
+  beat_schedule_filename=/tmp/celery_beat_schedule.db
+  # shellcheck disable=SC2034
+  events_pidfile=/tmp/celery_events.pid
+  # shellcheck disable=SC2034
+  worker_pidfile=/tmp/celery_worker.pid
+fi
+
+if [ "$1" = 'web' ]; then
+  # Run the web agent.
+  exec gunicorn -c python:config.gunicorn 'slurp:create_app()' "$@"
+fi
+
 exec "$@"

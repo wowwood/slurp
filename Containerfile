@@ -47,7 +47,7 @@ ARG APP_GID=1000
 # Get main project dependencies, then add the get-iplayer repository and download
 # FIXME This is supremely sucky (get-iplayer has a stupidly long list of dependencies) and should be replaced with a manual build stage
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends curl libpq-dev gpg nodejs \
+  && apt-get install -y --no-install-recommends curl libpq-dev gpg \
   && echo 'deb https://download.opensuse.org/repositories/home:/m-grant-prg/Debian_13/ /' | tee /etc/apt/sources.list.d/home:m-grant-prg.list \
   && curl -fsSL https://download.opensuse.org/repositories/home:m-grant-prg/Debian_13/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/home_m-grant-prg.gpg > /dev/null \
   && apt-get update && apt-get install -y --no-install-recommends get-iplayer \
@@ -55,8 +55,8 @@ RUN apt-get update \
   && apt-get clean \
   && groupadd -g "${APP_GID}" python \
   && useradd --create-home --no-log-init -u "${APP_UID}" -g "${APP_GID}" python \
-  && mkdir /data \
-  && chown python:python -R /app /data
+  && mkdir /data && mkdir /run/celery \
+  && chown python:python -R /app /data /run/celery
 
 USER python
 
@@ -68,9 +68,12 @@ ENV FLASK_DEBUG="${FLASK_DEBUG}" \
     PYTHONPATH="." \
     PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
-    PATH="${PATH}:/app/.venv/bin" \
+    PATH="/app/.venv/bin:${PATH}" \
     USER="python" \
-    SLURP_FETCHER_YTDLP_JS_RUNTIMES="{'node': {'path': '/usr/bin/node'}}"
+    SLURP_FETCHER_YTDLP_JS_RUNTIMES="{'node': {'path': '/usr/bin/deno'}}"
+
+# Copy in the deno JS runtime
+COPY --from=denoland/deno:bin-2.8.2 /deno /usr/bin/deno
 
 COPY --chown=python:python --from=app-build /app/.venv /app/.venv
 COPY --chown=python:python . .
@@ -83,4 +86,4 @@ ENTRYPOINT ["/app/deploy/cri/bin/entrypoint"]
 
 EXPOSE 8000
 
-CMD ["/app/deploy/cri/bin/start-web"]
+CMD ["web"]

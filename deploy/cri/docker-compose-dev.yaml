@@ -2,11 +2,8 @@ version: '3.8'
 
 services:
   web:
-    build:
-      context: ../..
-      dockerfile: ./Containerfile
-    image: slurp
-    command: /app/deploy/cri/bin/start-web
+    image: ghcr.io/wowwood/slurp:latest
+    command: web
     environment:
       SLURP_REDIS_URL: "redis://redis:6379"
     volumes:
@@ -23,11 +20,8 @@ services:
       - "6379:6379"
 
   celery_worker:
-    build:
-      context: ../..
-      dockerfile: ./Containerfile
-    image: slurp
-    command: /app/deploy/cri/bin/start-celeryworker
+    image: ghcr.io/wowwood/slurp:latest
+    command: celery worker -Q celery,fetch
     environment:
       SLURP_REDIS_URL: "redis://redis:6379"
     volumes:
@@ -37,11 +31,8 @@ services:
       - redis
 
   celery_beat:
-    build:
-      context: ../..
-      dockerfile: ./Containerfile
-    image: slurp
-    command: /app/deploy/cri/bin/start-celerybeat
+    image: ghcr.io/wowwood/slurp:latest
+    command: celery beat
     environment:
       SLURP_REDIS_URL: "redis://redis:6379"
     volumes:
@@ -51,11 +42,8 @@ services:
       - redis
 
   flower:
-    build:
-      context: ../..
-      dockerfile: ./Containerfile
-    image: slurp
-    command: /app/deploy/cri/bin/start-flower
+    image: ghcr.io/wowwood/slurp:latest
+    command: celery flower
     environment:
       SLURP_REDIS_URL: "redis://redis:6379"
     volumes:
