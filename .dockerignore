@@ -1,2 +1,8 @@
 .venv
 instance/
+
+/tmp*
+
+/celerybeat-schedule
+/celerybeat-schedule-shm
+/celerybeat-schedule-wal
