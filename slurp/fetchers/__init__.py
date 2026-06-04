@@ -1,4 +1,5 @@
 import ast
+import shutil
 
 from slurp.fetchers.cobalt import CobaltFetcher
 from slurp.fetchers.exceptions import FetcherMisconfiguredError
@@ -31,11 +32,13 @@ class FetcherManager:
                         f"Parsing FETCHER_YTDLP_JS_RUNTIMES failed: {e}"
                     ) from e
             else:
-                app.logger.warning(
-                    "The YTDLP fetcher does not have a Javascript runtime configured. "
-                    "It will still function, but in a degraded state - please set one using the FETCHER_YTDLP_JS_RUNTIMES config flag. "
-                    "If 'deno' is available on the system PATH, please ignore this warning."
-                )
+                # noinspection PyDeprecation
+                path = shutil.which("deno")
+                if path is None:
+                    app.logger.warning(
+                        "The YTDLP fetcher does not have a Javascript runtime configured, and 'deno' is not available on the system path."
+                        "It will still function, but in a degraded state - please set one using the FETCHER_YTDLP_JS_RUNTIMES config flag."
+                    )
             try:
                 self.fetchers.append(
                     YTDLPFetcher(

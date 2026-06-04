@@ -4,6 +4,7 @@ import threading
 from typing import Generator
 
 import httpx
+from flask import current_app
 
 from slurp.fetchers.exceptions import FetcherMisconfiguredError
 from slurp.fetchers.types import (
@@ -227,7 +228,9 @@ class CobaltFetcher(Fetcher):
                     q.put(FetcherProgressReport(typ="log", level="info", message=msg))
                     for data in r.iter_bytes():
                         f.write(data)
-                        print(f"written {r.num_bytes_downloaded} bytes")
+                        current_app.logger.debug(
+                            f"written {r.num_bytes_downloaded} bytes"
+                        )
                         num_bytes_downloaded = r.num_bytes_downloaded
 
                     q.put(

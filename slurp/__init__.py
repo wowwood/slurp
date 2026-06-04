@@ -75,10 +75,10 @@ def create_app(config_filename: str = "config.toml") -> Flask:
     bind_redis(app)
 
     if isinstance(app.config["OUTPUTS"], str):
-        app.logger.error(f"Outputs pre-split: {app.config['OUTPUTS']}")
+        app.logger.debug(f"Outputs pre-split: {app.config['OUTPUTS']}")
         # Normalise the OUTPUTS list to a list
         app.config["OUTPUTS"] = app.config.get("OUTPUTS", "").split(os.pathsep)
-        app.logger.error(f"Outputs post-split: {app.config['OUTPUTS']}")
+        app.logger.info(f"Configured outputs: {','.join(app.config['OUTPUTS'])}")
 
     fetcher_manager.init_app(app)
 
