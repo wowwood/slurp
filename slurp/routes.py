@@ -6,6 +6,7 @@ from flask import (
     request,
 )
 from flask_wtf import FlaskForm
+from redis_om import model
 from wtforms import SelectField, StringField, URLField
 from wtforms.validators import URL, AnyOf, DataRequired
 
@@ -47,8 +48,9 @@ def index():
 def fetch_info(id: str):
     form = DownloadForm(request.args)
     form.target.choices = current_app.config["OUTPUTS"]
-    task = Fetch.get(id)
-    if task is None:
+    try:
+        task = Fetch.get(id)
+    except model.NotFoundError:
         return abort(404)
     allLog = FetchEvent.find(FetchEvent.fetch_id == id).sort_by("ts_created").all()
 
