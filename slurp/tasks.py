@@ -340,7 +340,9 @@ def cleanup_task(self, task_pk: str, events: bool = False):
         if fs_target.is_file():
             fs_target.unlink()
         else:
-            print("Failed to destroy output - does not exist, or is not a file")
+            current_app.logger.warning(
+                "Failed to destroy output - does not exist, or is not a file"
+            )
     # Mark the task as pruned
     task.pruned = True
     task.save()
