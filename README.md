@@ -1,9 +1,22 @@
-🥤 Slurp
-===
+<h1 align="center">🥤 Slurp</h1>
+<p align="center"><b>A web media ingest utility, built with broadcast environments in mind.</b></p>
+
+## What is Slurp?
+
+_Slurp_ is your media organization's gateway for fetching web audio and video, and getting it into your existing
+production ingest workflows.
+
+At its core, it simply gets the media from a given URL, then outputs it into a folder along with a chosen filename.
+The power is that you can then automate into your existing workflows, such
+as [Telestream Vantage](https://www.telestream.com/vantage/), to produce a seamless experience for your team.
+
+Thanks to its queue-based architecture, _Slurp_ can scale from small, infrequently-used deployments, to enormous scale
+with multiple downloads simultaneously being executed.
+
+_Slurp_ is built with international broadcast and MCR teams in mind - all times are in UTC, and there's a rapidly
+growing REST API that you can use for integration into your own systems to query state, enqueue new jobs, and more.
 
 ## Deployment
-
-___
 
 ### CRI / Docker
 
@@ -21,6 +34,19 @@ An example docker-compose manifest is available in `/app/deploy/cri` - tweak to 
 
 To call the individual container functions yourself, do something like the following:
 `[podman|docker] run -d --restart=always -v config.toml:/app/config.toml --name slurp wowwood/slurp`
+
+#### Scaling
+
+> [!NOTE]
+> You probably don't need to worry about scaling Slurp - one worker can handle a decent amount of workload.
+
+If you want to scale _Slurp_ to handle more load, you can run as many instances of the web server and worker process as
+you'd like.
+
+What you likely want to do is increase the number of celery workers so you can process more videos simultaneously.
+
+**Do not horizontally scale the _Celery Beat_ container.** Your solution **must** ensure that only one _Beat_ instance
+is running at a time.
 
 ### Directly (systemd / Gunicorn)
 
@@ -92,7 +118,11 @@ celery -A slurp.make_celery:celery worker -Q celery,fetch
 
 You might want to run separate celery and fetch workers so you don't end up with a blocked queue (which can stop new
 tasks from being created over the REST API).
-To do that, just run two Celery instances: one with `-Q celery` and one with `-Q fetch`.
+To do that, just run two Celery worker instances: one with `-Q celery` and one with `-Q fetch`.
+
+### Notes on Developing Slurp
+
+The app stores times in `UTC` - remember to convert to local timezones where required (or don't, I'm not your mom)
 
 # Configuration
 
@@ -185,6 +215,13 @@ Then simply configure _Slurp_ to use the API key for authentication:
 FETCHER_COBALT_KEY = "random-uuidv4-goes-here"
 ```
 
-## Technical Details
+## Sponsors
 
-The app stores times in `UTC` - remember to convert to local timezones where required (or don't, I'm not your mom)
+In the interest of transparency, _Slurp_ is made possible thanks to funding from CBS News.
+
+<img src="docs/static/img/CBS_News_logo_(2020).svg" width="256"></img>
+
+## License
+
+Slurp is licensed under the terms of the [European Union Public License v1.2](LICENSE.md). This means that use for
+commercial purposes is permitted, but please read the license (and take legal advice!) for more information.
