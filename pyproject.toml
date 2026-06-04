@@ -22,7 +22,7 @@ dependencies = [
     "yt-dlp (>=2026.2.0)",
     "httpx (>=0.28.1,<0.29.0)",
     "gunicorn (~=26.0)",
-    "pytest (>=9.0.2,<10.0.0)",
+    "pytest (>=9.0.3,<10.0.0)",
     "coverage>=7.13.4,<8.0.0",
     "yt-dlp-ejs(~=0.8)",
     "pymediainfo (>=7.0.1,<8.0.0)",
@@ -40,7 +40,7 @@ serve = "slurp:serve"
 
 [dependency-groups]
 dev = [
-    "pytest (>=9.0.2,<10.0.0)",
+    "pytest (>=9.0.3,<10.0.0)",
     "coverage (>=7.13.1,<8.0.0)",
     "ruff>=0.14.10",
     "celery-types>=0.26.0"
