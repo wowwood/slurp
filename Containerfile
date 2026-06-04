@@ -70,7 +70,7 @@ ENV FLASK_DEBUG="${FLASK_DEBUG}" \
     PYTHONHASHSEED=random \
     PATH="/app/.venv/bin:${PATH}" \
     USER="python" \
-    SLURP_FETCHER_YTDLP_JS_RUNTIMES="{'node': {'path': '/usr/bin/deno'}}"
+    SLURP_FETCHER_YTDLP_JS_RUNTIMES="{'deno': {'path': '/usr/bin/deno'}}"
 
 # Copy in the deno JS runtime
 COPY --from=denoland/deno:bin-2.8.2 /deno /usr/bin/deno
