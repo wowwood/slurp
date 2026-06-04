@@ -1,7 +1,0 @@
-#!/bin/sh
-
-set -o errexit
-set -o nounset
-
-# This could do with being configurable (so you can have a worker dedicated to fetch tasks)
-celery -A slurp.make_celery:celery worker -l info -Q celery,fetch
