@@ -1,10 +1,11 @@
 import os
 import queue
 import threading
+from json import JSONDecodeError
 from typing import Generator
 
 import httpx
-from flask import current_app
+from celery.utils.log import get_task_logger
 
 from slurp.fetchers.exceptions import FetcherMisconfiguredError
 from slurp.fetchers.types import (
@@ -15,6 +16,8 @@ from slurp.fetchers.types import (
     FetcherUpdateEvent,
     Format,
 )
+
+logger = get_task_logger(__name__)
 
 
 class CobaltFetcher(Fetcher):
@@ -28,7 +31,7 @@ class CobaltFetcher(Fetcher):
     url = ""
     key: str | None = None
 
-    def __init__(self, url: str, key: str = None):
+    def __init__(self, url: str, key: str | None = None):
         self.url = url
         self.key = key if key != "" else None
         # Test the backend is available. If it isn't, we throw an initialization exception.
@@ -39,10 +42,16 @@ class CobaltFetcher(Fetcher):
         if self.url == "":
             raise FetcherMisconfiguredError("Fetcher URL not set correctly.")
         try:
-            response_data = (
-                httpx.get(self.url, headers=self._headers()).raise_for_status().json()
-            )
-            assert "cobalt" in response_data
+            response_data = httpx.get(
+                self.url, headers=self._headers()
+            ).raise_for_status()
+            try:
+                response_data = response_data.json()
+                assert "cobalt" in response_data
+            except JSONDecodeError as e:
+                raise FetcherMisconfiguredError(
+                    f"Error decoding JSON from Cobalt backend: {e}"
+                )
         except (AssertionError, httpx.HTTPError) as e:
             raise FetcherMisconfiguredError(f"Cannot communicate with backend: {e}")
 
@@ -228,8 +237,8 @@ class CobaltFetcher(Fetcher):
                     q.put(FetcherProgressReport(typ="log", level="info", message=msg))
                     for data in r.iter_bytes():
                         f.write(data)
-                        current_app.logger.debug(
-                            f"written {r.num_bytes_downloaded} bytes"
+                        logger.debug(
+                            f"written {r.num_bytes_downloaded} bytes from cobalt"
                         )
                         num_bytes_downloaded = r.num_bytes_downloaded
 
