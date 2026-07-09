@@ -53,3 +53,22 @@ services:
       - "5555:5555"
     depends_on:
       - redis
+
+  cobalt:
+    image: ghcr.io/imputnet/cobalt:11
+
+    init: true
+    read_only: true
+    restart: unless-stopped
+    container_name: cobalt
+
+    ports:
+      - "9090:9000/tcp"
+      # if you use a reverse proxy (such as nginx),
+      # uncomment the next line and remove the one above (9000:9000/tcp):
+      # - 127.0.0.1:9000:9000
+
+    environment:
+      # replace https://api.url.example/ with your instance's url
+      # or else tunneling functionality won't work properly
+      API_URL: "http://127.0.0.1:9090/"
