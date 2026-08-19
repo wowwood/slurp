@@ -25,11 +25,22 @@ class YTDLPFetcher(Fetcher):
     # YT-DLP is always ready.
     ready = True
 
-    # We're quite a specific fetcher, so relatively high priority.
-    priority = 10
+    # We're not particularly specific - but try it first before moving on.
+    priority = 100
 
-    service_names = ["Youtube"]
-    service_urls = ["youtube.com", "youtu.be"]
+    service_names = [
+        "Most services - see https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md"
+    ]
+
+    # service_urls = ["youtube.com", "youtu.be"]
+    @property
+    def service_urls(self) -> list[str] | None:
+        """
+        service_urls returns the supported services that we can query for data.
+        Cobalt is a special instance: we attempt to download anything that is otherwise unsupported by another module.
+        """
+        # Special return: we support anything that the backend supports.
+        return None
 
     js_runtimes: dict[str, dict[str, str]] | None = None
     extractor_args: dict[str, dict[str, str]] | None = None
