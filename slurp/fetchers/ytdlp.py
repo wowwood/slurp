@@ -72,7 +72,7 @@ class YTDLPFetcher(Fetcher):
         cfg = {}
         if self.extractor_args is not None:
             # If extractor args are available, append them to the config.
-            cfg = cfg | self.extractor_args
+            cfg = cfg | {"extractor_args": self.extractor_args}
 
         match fmt:
             case fmt.VIDEO_AUDIO:
