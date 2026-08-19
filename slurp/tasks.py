@@ -301,7 +301,7 @@ def cleanup_stale_tasks(self):
     # Find all tasks that are OLDER than the cutoff, and that have not been purged.
     # Purged is done as a negative to catch models without the key set
     prune_targets = Fetch.find(
-        (Fetch.ts_created <= prune_cutoff) & ~(Fetch.purged == True),  # noqa: E712
+        (Fetch.ts_created <= prune_cutoff) & ~Fetch.purged,
     ).all()
     for task in prune_targets:
         # Enqueue cleanup
@@ -354,7 +354,6 @@ def cleanup_task(self, task_pk: str, events: bool = False):
         f"Task was {'purged' if events else 'pruned'}",
         0,
     )
-    return
 
 
 def _init_periodic_tasks(sender: Celery, **kwargs):

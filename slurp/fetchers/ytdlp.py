@@ -1,8 +1,8 @@
 import queue
 import threading
-from datetime import datetime, timezone
+from collections.abc import Generator
+from datetime import UTC, datetime
 from glob import glob
-from typing import Generator
 
 from yt_dlp import YoutubeDL
 
@@ -99,7 +99,7 @@ class YTDLPFetcher(Fetcher):
             data.author = response.get("uploader")
             data.author_url = response.get("uploader_url")
             data.ts_upload = (
-                datetime.fromtimestamp(response.get("timestamp"), timezone.utc)
+                datetime.fromtimestamp(response.get("timestamp"), UTC)
                 if response.get("timestamp", False)
                 else None
             )

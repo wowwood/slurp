@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Annotated, Any, Type
+from typing import Annotated, Any
 
 from flask import current_app, request
 from flask_restx import Namespace, Resource, ValidationError, abort, fields
@@ -90,7 +90,7 @@ createTask = api.model(
 )
 
 
-def accept_enum_name(enum: Type[Enum]) -> BeforeValidator:
+def accept_enum_name(enum: type[Enum]) -> BeforeValidator:
     """ "
     Pydantic validator that validates against the name of the enum value, not the value itself.
     See https://github.com/pydantic/pydantic/discussions/2980#discussioncomment-15042101

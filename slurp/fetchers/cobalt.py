@@ -1,8 +1,8 @@
 import os
 import queue
 import threading
+from collections.abc import Generator
 from json import JSONDecodeError
-from typing import Generator
 
 import httpx
 from celery.utils.log import get_task_logger

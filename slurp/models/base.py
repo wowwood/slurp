@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from redis_om import Field, JsonModel
 
@@ -12,12 +12,12 @@ class BaseModel(JsonModel):
 
     ts_created: datetime = Field(
         sortable=True,
-        default_factory=datetime.now(timezone.utc).now,
+        default_factory=datetime.now(UTC).now,
     )
-    ts_updated: datetime = Field(sortable=True, default=datetime.now(timezone.utc))
+    ts_updated: datetime = Field(sortable=True, default=datetime.now(UTC))
 
     def save(self, **kwargs):
-        self.ts_updated = datetime.now(timezone.utc)
+        self.ts_updated = datetime.now(UTC)
         super().save(**kwargs)
 
     class Meta:

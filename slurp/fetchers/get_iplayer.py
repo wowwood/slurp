@@ -6,9 +6,9 @@ import shutil
 import subprocess
 import tempfile
 import threading
+from collections.abc import Generator
 from datetime import datetime
 from glob import glob
-from typing import Generator
 
 from slurp.fetchers.exceptions import (
     AmbiguousQueryError,

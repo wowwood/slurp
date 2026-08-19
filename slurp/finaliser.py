@@ -1,5 +1,5 @@
 import shutil
-from typing import Generator
+from collections.abc import Generator
 from urllib.parse import SplitResult, urlsplit
 
 from flask import current_app
@@ -83,7 +83,6 @@ def finalise(src: str, dest_dir: str):
             message="Media seems fine",
         )
     yield FetcherMediaAvailable(_move_file(src, dest_dir))
-    return
 
 
 def _validate_media_integrity(media: str) -> list[str]:

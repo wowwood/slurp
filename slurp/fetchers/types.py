@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
+from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Generator
 
 
 class Format(str, Enum):
@@ -35,7 +35,6 @@ class MediaMetadata:
 class FetcherUpdateEvent(ABC):
     """A FetcherUpdateEvent is any event that happens over the course of a fetcher's fetching lifespan."""
 
-    pass
 
 
 @dataclass()
@@ -108,4 +107,3 @@ class Fetcher(ABC):
         :param directory:
         :param filename:
         """
-        pass
