@@ -39,10 +39,25 @@ class FetcherManager:
                         "The YTDLP fetcher does not have a Javascript runtime configured, and 'deno' is not available on the system path."
                         "It will still function, but in a degraded state - please set one using the FETCHER_YTDLP_JS_RUNTIMES config flag."
                     )
+
+            # Append extractor arguments, if supplied
+            extractor_args: dict[str, dict[str, dict[str, str]]] | None = None
+            if app.config.get("FETCHER_YTDLP_EXTRACTOR_ARGS") is not None:
+                # Only try to parse the runtimes configuration if it's been set in the first place
+                try:
+                    extractor_args = ast.literal_eval(
+                        app.config.get("FETCHER_YTDLP_EXTRACTOR_ARGS", None)
+                    )
+                except SyntaxError as e:
+                    raise SyntaxError(
+                        f"Parsing FETCHER_YTDLP_EXTRACTOR_ARGS failed: {e}"
+                    ) from e
+
             try:
                 self.fetchers.append(
                     YTDLPFetcher(
                         js_runtimes=js_runtimes,
+                        extractor_args=extractor_args,
                     )
                 )
             except FetcherMisconfiguredError as e:

@@ -151,7 +151,18 @@ so:
 FETCHER_YTDLP_JS_RUNTIMES = '{"node": {"path": "/usr/bin/node"}}'
 ```
 
-##### get_iplayer
+##### Extractor Overrides
+
+You can optionally override the extractor arguments supplied to YT-DLP using the `FETCHER_YTDLP_EXTRACTOR_ARGS` flag.
+This can be useful if changes to the Youtube platform require custom flags to be set in YT-DLP to restore functionality.
+
+For example:
+
+```toml
+FETCHER_YTDLP_EXTRACTOR_ARGS = "{'youtube': {'player_client': ['web_embedded', 'web', 'tv']}"
+```
+
+#### get_iplayer
 
 The _get\_iplayer_ fetcher grabs media in up to HD quality using an installed copy
 of [get_iplayer](https://github.com/get-iplayer/get_iplayer/tree/master).
