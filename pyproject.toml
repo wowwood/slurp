@@ -42,9 +42,13 @@ serve = "slurp:serve"
 dev = [
     "pytest (>=9.0.2,<10.0.0)",
     "coverage (>=7.13.1,<8.0.0)",
-    "ruff (>=0.15.22,<0.16.0)",
+    "ruff >=0.16.3",
     "celery-types>=0.26.0"
 ]
+
+[tool.ruff.lint]
+# https://astral.sh/blog/ruff-v0.16.0 Fix me if you like / dare
+select = ["E4", "E7", "E9", "F"]
 
 [tool.uv.build-backend]
 module-name = "slurp"
