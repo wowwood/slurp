@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   web:
-    image: ghcr.io/wowwood/slurp:latest
+    image: ghcr.io/duckfullstop/slurp:latest
     command: web
     environment:
       SLURP_REDIS_URL: "redis://redis:6379"
@@ -20,7 +20,7 @@ services:
       - "6379:6379"
 
   celery_worker:
-    image: ghcr.io/wowwood/slurp:latest
+    image: ghcr.io/duckfullstop/slurp:latest
     command: celery worker -Q celery,fetch
     environment:
       SLURP_REDIS_URL: "redis://redis:6379"
@@ -31,7 +31,7 @@ services:
       - redis
 
   celery_beat:
-    image: ghcr.io/wowwood/slurp:latest
+    image: ghcr.io/duckfullstop/slurp:latest
     command: celery beat
     environment:
       SLURP_REDIS_URL: "redis://redis:6379"
@@ -42,7 +42,7 @@ services:
       - redis
 
   flower:
-    image: ghcr.io/wowwood/slurp:latest
+    image: ghcr.io/duckfullstop/slurp:latest
     command: celery flower
     environment:
       SLURP_REDIS_URL: "redis://redis:6379"

@@ -91,7 +91,7 @@ class CobaltFetcher(Fetcher):
         cfg = {
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "User-Agent": "wowwood/slurp",
+            "User-Agent": "duckfullstop/slurp",
         }
         if self.key is not None:
             cfg["Authorization"] = f"Api-Key {self.key}"

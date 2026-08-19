@@ -5,6 +5,7 @@ description = "Online media ingest utility"
 authors = [
     { name = "embr", email = "git@liclac.eu" },
     { name = "duck.", email = "me@duck.moe" },
+    { name = "Wren Wood", email = "wren@beforetree.com" }
 ]
 requires-python = ">=3.13"
 readme = "README.md"

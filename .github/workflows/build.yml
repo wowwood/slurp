@@ -41,9 +41,9 @@ jobs:
           labels: |
             org.opencontainers.image.title=Slurp
             org.opencontainers.image.description=Web media ingest utility.
-            org.opencontainers.image.url=https://github.com/wowwood/slurp
-            org.opencontainers.image.source=https://github.com/wowwood/slurp
-            org.opencontainers.image.vendor=wowwood
+            org.opencontainers.image.url=https://github.com/duckfullstop/slurp
+            org.opencontainers.image.source=https://github.com/duckfullstop/slurp
+            org.opencontainers.image.vendor=duckfullstop
           tags: |
             type=sha,format=long,suffix=-${{ matrix.arch.label }}
 

@@ -33,7 +33,7 @@ You will need to make sure you have _at least_ the following running:
 An example docker-compose manifest is available in `/app/deploy/cri` - tweak to your requirements.
 
 To call the individual container functions yourself, do something like the following:
-`[podman|docker] run -d --restart=always -v config.toml:/app/config.toml --name slurp wowwood/slurp`
+`[podman|docker] run -d --restart=always -v config.toml:/app/config.toml --name slurp duckfullstop/slurp`
 
 #### Scaling
 
