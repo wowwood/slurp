@@ -32,9 +32,15 @@ class YTDLPFetcher(Fetcher):
     service_urls = ["youtube.com", "youtu.be"]
 
     js_runtimes: dict[str, dict[str, str]] | None = None
+    extractor_args: dict[str, dict[str, str]] | None = None
 
-    def __init__(self, js_runtimes: dict[str, dict[str, str]] | None = None):
+    def __init__(
+        self,
+        js_runtimes: dict[str, dict[str, str]] | None = None,
+        extractor_args: dict[str, dict[str, str]] = None,
+    ):
         self.js_runtimes = js_runtimes
+        self.extractor_args = extractor_args
 
     class _Queuelogger:
         """queueLogger provides a yt-dlp compatible logging interface that emits exclusively to a queue."""
@@ -58,22 +64,26 @@ class YTDLPFetcher(Fetcher):
         def error(self, msg):
             self.q.put(FetcherProgressReport(typ="log", level="error", message=msg))
 
-    @classmethod
-    def _format_config(cls, fmt: Format) -> dict:
+    def _format_config(self, fmt: Format) -> dict:
         """_format_config returns YT-DLP configuration to be used when downloading media in the given format.
         :param fmt: The desired media format.
         :return: A YT-DLP configuration parameters dictionary.
         """
+        cfg = {}
+        if self.extractor_args is not None:
+            # If extractor args are available, append them to the config.
+            cfg = cfg | self.extractor_args
+
         match fmt:
             case fmt.VIDEO_AUDIO:
-                return {
+                cfg = cfg | {
                     "format": "bestvideo*+bestaudio/best",
                 }
                 # force codec to h264 m4a/mp4
                 # fails if this format isn't available, fix later
                 # return ['-f', 'bv*[vcodec^=avc]+ba[ext=m4a]/b[ext=mp4]/b']
             case fmt.AUDIO_ONLY:
-                return {
+                cfg = cfg | {
                     "format": "m4a/bestaudio/best",
                     "postprocessors": [
                         {  # Extract audio using ffmpeg
@@ -84,6 +94,7 @@ class YTDLPFetcher(Fetcher):
                 }
             case _:
                 raise ValueError("invalid format")
+        return cfg
 
     def _get_metadata(
         self, url: str, fmt: Format = Format.VIDEO_AUDIO

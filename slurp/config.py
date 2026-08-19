@@ -32,6 +32,7 @@ class DefaultConfig:
 
     # Enable the YTDLP fetcher.
     FETCHER_YTDLP_ENABLED: bool = True
+    FETCHER_YTDLP_EXTRACTOR_ARGS: str | None = None
 
     # Enable the get_iplayer fetcher.
     # Note: get_iplayer must be installed separately (we just call the binary).
