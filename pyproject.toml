@@ -1,6 +1,6 @@
 [project]
 name = "slurp"
-version = "0.3.1"
+version = "2026.8.0"
 description = "Online media ingest utility"
 authors = [
     { name = "embr", email = "git@liclac.eu" },
