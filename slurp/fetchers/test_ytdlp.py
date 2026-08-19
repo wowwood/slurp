@@ -29,9 +29,19 @@ class TestYTDLPFetcher:
     def fetcher_instance(self):
         return YTDLPFetcher()
 
+    @pytest.fixture
+    def fetcher_instance_with_args(self):
+        extractor_args = {"youtube": {"player_client": ["web_embedded", "web", "tv"]}}
+        return YTDLPFetcher(extractor_args=extractor_args)
+
     @pytest.mark.network
     def test_get_metadata(self, fetcher_instance):
         meta = fetcher_instance._get_metadata(_urls["huge"])
+        assert meta is not None, "_get_metadata returned None"
+
+    @pytest.mark.network
+    def test_get_metadata_with_extractor_args(self, fetcher_instance_with_args):
+        meta = fetcher_instance_with_args._get_metadata(_urls["huge"])
         assert meta is not None, "_get_metadata returned None"
 
     @pytest.mark.network
